@@ -25,9 +25,10 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
     Aşağıdaki PDF kredi kartı ekstresini analiz et. 
     ${settings.customInstructions ? `Özel Talimatlar: ${settings.customInstructions}` : ''}
     1. Tüm alışverişleri, iadeleri ve ödemeleri belirle.
-    2. Tarihleri YYYY-MM-DD formatına çevir (Hatalı tarih döndürme).
+    2. Tarihleri KESİNLİKLE YYYY-MM-DD formatına çevir.
     3. Kategorileri belirle: (Market, Restoran, Teknoloji, Ulaşım, Eğlence, Sağlık, Giyim, Fatura, Diğer).
-    4. Miktarları sadece sayı (number) olarak döndür.
+    4. Type alanı SADECE 'expense' veya 'income' değerlerini alabilir. Kredi kartı ödemeleri ve iadeler 'income', harcamalar 'expense'dir.
+    5. Miktarları (amount) sadece pozitif sayılar olarak döndür.
     Yalnızca JSON array döndür.
   `;
 
@@ -44,11 +45,11 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
           items: {
             type: Type.OBJECT,
             properties: {
-              date: { type: Type.STRING },
+              date: { type: Type.STRING, description: "YYYY-MM-DD formatında tarih" },
               description: { type: Type.STRING },
               amount: { type: Type.NUMBER },
               category: { type: Type.STRING },
-              type: { type: Type.STRING },
+              type: { type: Type.STRING, description: "Sadece 'expense' veya 'income'" },
             },
             required: ["date", "description", "amount", "category", "type"],
           },
@@ -56,11 +57,13 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
       },
     });
 
-    const transactions: any[] = JSON.parse(response.text || '[]');
+    const text = response.text || '[]';
+    const transactions: any[] = JSON.parse(text);
     return transactions.map((t, index) => ({
       ...t,
-      amount: Number(t.amount) || 0, // Sayısal garanti
-      id: `tx-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+      amount: Math.abs(Number(t.amount)) || 0,
+      type: t.type === 'income' ? 'income' : 'expense',
+      id: `tx-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
     }));
   } catch (error) {
     console.error("Gemini Analiz Hatası:", error);
@@ -97,9 +100,9 @@ export const analyzeSalarySlip = async (base64Pdf: string): Promise<Transaction>
     const data = JSON.parse(response.text || '{}');
     return {
       id: `salary-${Date.now()}`,
-      date: data.date,
+      date: data.date || new Date().toISOString().split('T')[0],
       description: data.description || "Maaş Ödemesi",
-      amount: Number(data.amount) || 0,
+      amount: Math.abs(Number(data.amount)) || 0,
       category: "Maaş",
       type: "income",
       source: "salary_slip"

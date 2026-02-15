@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [aiAdvice, setAiAdvice] = useState<AiAdvice | null>(null);
   const [isAdviceLoading, setIsAdviceLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -56,7 +57,7 @@ const App: React.FC = () => {
       const advice = await getFinancialAdvice(txs);
       setAiAdvice(advice);
     } catch (err) {
-      console.error(err);
+      console.error("Advice Error:", err);
     } finally {
       setIsAdviceLoading(false);
     }
@@ -78,9 +79,10 @@ const App: React.FC = () => {
 
   const handleFilesSelect = async (base64Array: string[]) => {
     if (!isOnline) {
-      alert("Boss, we need internet for analysis!");
+      alert("Başkan, analiz için internet lazım!");
       return;
     }
+    setLastError(null);
     triggerHaptic([30, 50, 30]);
     setStatus(AppStatus.ANALYZING);
     setProcessedCount(0);
@@ -93,27 +95,38 @@ const App: React.FC = () => {
             const result = await analyzeStatement(base64);
             setProcessedCount(prev => prev + 1);
             return result.map(tx => ({ ...tx, source: 'ai' as const }));
-          } catch (e) {
+          } catch (e: any) {
+            console.error("Dosya Analiz Hatası:", e);
+            setLastError(e.message || "Analiz sırasında bir hata oluştu.");
             return [];
           }
         })
       );
+      
       const newTransactions = results.flat();
-      setTransactions(prev => {
-        const combined = [...newTransactions, ...prev];
-        const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-        return unique.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      });
-      setStatus(AppStatus.READY);
-      setActiveTab('home');
-      setAiAdvice(null);
-    } catch (err) {
+      if (newTransactions.length > 0) {
+        setTransactions(prev => {
+          const combined = [...newTransactions, ...prev];
+          // Duplicate check by description, date and amount to avoid repeats from multiple uploads
+          const unique = Array.from(new Map(combined.map(item => [`${item.date}-${item.description}-${item.amount}`, item])).values());
+          return unique.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        });
+        setStatus(AppStatus.READY);
+        setActiveTab('home');
+        setAiAdvice(null);
+      } else {
+        setStatus(AppStatus.ERROR);
+      }
+    } catch (err: any) {
+      console.error("Batch Analysis Error:", err);
+      setLastError(err.message || "Toplu işlem hatası.");
       setStatus(AppStatus.ERROR);
     }
   };
 
   const handleSalarySelect = async (base64Array: string[]) => {
     if (!isOnline || base64Array.length === 0) return;
+    setLastError(null);
     setStatus(AppStatus.ANALYZING_SALARY);
     try {
       const tx = await analyzeSalarySlip(base64Array[0]);
@@ -121,7 +134,9 @@ const App: React.FC = () => {
       setStatus(AppStatus.READY);
       setActiveTab('home');
       setAiAdvice(null);
-    } catch (e) {
+    } catch (e: any) {
+      console.error("Bordro Hatası:", e);
+      setLastError(e.message || "Bordro analiz edilemedi.");
       setStatus(AppStatus.ERROR);
     }
   };
@@ -134,12 +149,21 @@ const App: React.FC = () => {
     setAiAdvice(null);
   };
 
+  const clearAllData = () => {
+    if (confirm("Tüm veriler silinecek, emin misin başkan?")) {
+      setTransactions([]);
+      saveTransactions([]);
+      setAiAdvice(null);
+      setStatus(AppStatus.IDLE);
+    }
+  };
+
   return (
     <div className={`flex flex-col md:flex-row h-screen w-full transition-colors duration-300 ${theme === 'dark' ? 'dark bg-darkBg text-white' : 'bg-slate-50 text-slate-900'}`}>
       
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 bg-slate-800/90 backdrop-blur-md text-white text-[10px] font-black text-center py-2 z-[100] border-b border-white/10 uppercase tracking-widest">
-          Offline Mode - Data Secured Locally
+          Offline Mod - Veriler Cihazında Güvende
         </div>
       )}
 
@@ -149,35 +173,37 @@ const App: React.FC = () => {
           <div className="bg-indigo-600 w-10 h-10 rounded-xl flex items-center justify-center">
             <i className="fas fa-bolt text-white"></i>
           </div>
-          <span className="font-black text-xl">FinanceFlow</span>
+          <span className="font-black text-xl tracking-tighter">FinanceFlow</span>
         </div>
 
         <nav className="flex-1 space-y-2">
-          <button onClick={() => setActiveTab('home')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full ${activeTab === 'home' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => setActiveTab('home')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full transition-all ${activeTab === 'home' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
             <i className="fas fa-home"></i><span className="font-bold">Dashboard</span>
           </button>
-          <button onClick={() => setActiveTab('history')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-            <i className="fas fa-list-ul"></i><span className="font-bold">History</span>
+          <button onClick={() => setActiveTab('history')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full transition-all ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+            <i className="fas fa-list-ul"></i><span className="font-bold">Geçmiş</span>
           </button>
-          <button onClick={() => setActiveTab('add')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full ${activeTab === 'add' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-            <i className="fas fa-plus-circle"></i><span className="font-bold">Add Data</span>
-          </button>
-          <button onClick={() => setIsSettingsOpen(true)} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800`}>
-            <i className="fas fa-cog"></i><span className="font-bold">Settings</span>
+          <button onClick={() => setActiveTab('add')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full transition-all ${activeTab === 'add' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+            <i className="fas fa-plus-circle"></i><span className="font-bold">Veri Ekle</span>
           </button>
         </nav>
 
-        <button onClick={toggleTheme} className="mt-auto flex items-center space-x-3 px-4 py-3 rounded-2xl w-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-          <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun text-yellow-400'}`}></i>
-          <span className="font-bold">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-        </button>
+        <div className="space-y-2 pt-10 border-t border-slate-100 dark:border-slate-800 mt-auto">
+          <button onClick={toggleTheme} className="flex items-center space-x-3 px-4 py-3 rounded-2xl w-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+            <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun text-yellow-400'}`}></i>
+            <span className="font-bold">{theme === 'light' ? 'Koyu Mod' : 'Aydınlık Mod'}</span>
+          </button>
+          <button onClick={() => setIsSettingsOpen(true)} className="flex items-center space-x-3 px-4 py-3 rounded-2xl w-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+            <i className="fas fa-cog"></i><span className="font-bold">Ayarlar</span>
+          </button>
+        </div>
       </aside>
 
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <header className="md:hidden flex-none bg-white dark:bg-darkCard px-6 pt-12 pb-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 z-50">
           <div className="flex items-center space-x-2">
             <div className="bg-indigo-600 w-8 h-8 rounded-lg flex items-center justify-center"><i className="fas fa-bolt text-white text-xs"></i></div>
-            <span className="font-bold text-lg">FinanceFlow</span>
+            <span className="font-bold text-lg tracking-tight">FinanceFlow</span>
           </div>
           <div className="flex space-x-2">
              <button onClick={() => setIsSettingsOpen(true)} className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-white">
@@ -191,12 +217,20 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-32 md:pb-10">
           <div className="max-w-6xl mx-auto px-5 py-6 md:py-10">
+            {lastError && (
+              <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-900/30 rounded-2xl flex items-center space-x-3 text-rose-600 animate-in slide-in-from-top-4 duration-300">
+                <i className="fas fa-exclamation-circle"></i>
+                <p className="text-xs font-bold uppercase tracking-widest">{lastError}</p>
+                <button onClick={() => setLastError(null)} className="ml-auto text-rose-400 hover:text-rose-600"><i className="fas fa-times"></i></button>
+              </div>
+            )}
+
             {status === AppStatus.IDLE && activeTab === 'home' && (
               <div className="max-w-2xl mx-auto text-center space-y-10 py-10">
-                <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Wealth Management<br/><span className="text-indigo-600">With AI</span></h2>
+                <h2 className="text-4xl md:text-5xl font-black tracking-tighter">AI Destekli<br/><span className="text-indigo-600">Bütçe Yönetimi</span></h2>
                 <div className="space-y-4">
                   <FileUpload onFilesSelect={handleFilesSelect} isLoading={false} />
-                  <button onClick={() => { setTransactions(getDemoTransactions()); setStatus(AppStatus.READY); }} className="w-full py-4 text-sm font-black text-indigo-600 uppercase tracking-widest">Load Demo Data</button>
+                  <button onClick={() => { setTransactions(getDemoTransactions()); setStatus(AppStatus.READY); }} className="w-full py-4 text-sm font-black text-indigo-600 uppercase tracking-widest hover:bg-indigo-50 dark:hover:bg-indigo-900/10 rounded-3xl transition-all">Demo Verileri Yükle</button>
                 </div>
               </div>
             )}
@@ -205,8 +239,8 @@ const App: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-[60vh] space-y-8">
                 <div className="h-40 w-40 rounded-full border-[6px] border-indigo-100 dark:border-slate-800 border-t-indigo-600 animate-spin"></div>
                 <div className="text-center">
-                  <p className="font-black text-3xl mb-2 tracking-tighter">AI is Thinking...</p>
-                  <p className="text-slate-400 font-medium">Extracting data from your {status === AppStatus.ANALYZING_SALARY ? 'Salary Slip' : 'Statement'}...</p>
+                  <p className="font-black text-3xl mb-2 tracking-tighter">AI Analiz Yapıyor...</p>
+                  <p className="text-slate-400 font-medium">{totalToProcess > 1 ? `${processedCount}/${totalToProcess} dosya işleniyor...` : 'Ekstre verileri ayrıştırılıyor...'}</p>
                 </div>
               </div>
             )}
@@ -217,19 +251,25 @@ const App: React.FC = () => {
                 <div className="space-y-8">
                   <AiAdvisor advice={aiAdvice} isLoading={isAdviceLoading} onRefresh={() => generateAdvice(transactions)} />
                   <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800">
-                    <h4 className="font-black text-xs text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h4>
+                    <h4 className="font-black text-xs text-slate-400 uppercase tracking-widest mb-4">Hızlı İşlemler</h4>
                     <div className="space-y-3">
-                      <button onClick={() => setIsManualModalOpen(true)} className="w-full py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-xs font-black uppercase text-left px-5 flex items-center justify-between">Manual Entry <i className="fas fa-plus"></i></button>
-                      <button onClick={() => setActiveTab('add')} className="w-full py-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xs font-black uppercase text-left px-5 flex items-center justify-between">Scan Documents <i className="fas fa-expand"></i></button>
+                      <button onClick={() => setIsManualModalOpen(true)} className="w-full py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-xs font-black uppercase text-left px-5 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">Manuel İşlem <i className="fas fa-plus"></i></button>
+                      <button onClick={() => setActiveTab('add')} className="w-full py-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xs font-black uppercase text-left px-5 flex items-center justify-between hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all">Dosya Tara <i className="fas fa-expand"></i></button>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {status === AppStatus.READY && activeTab === 'history' && (
+            {activeTab === 'history' && (
                <div className="space-y-8">
-                 <h3 className="text-3xl font-black tracking-tighter">History</h3>
+                 <div className="flex items-center justify-between">
+                   <h3 className="text-3xl font-black tracking-tighter">İşlem Geçmişi</h3>
+                   <button onClick={clearAllData} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 flex items-center space-x-2">
+                     <i className="fas fa-trash-alt"></i>
+                     <span>Verileri Temizle</span>
+                   </button>
+                 </div>
                  <TransactionList transactions={transactions} />
                </div>
             )}
@@ -237,20 +277,20 @@ const App: React.FC = () => {
             {activeTab === 'add' && (
               <div className="max-w-2xl mx-auto py-10 space-y-12">
                 <div className="text-center">
-                  <h3 className="text-4xl font-black tracking-tighter mb-2">Add Data</h3>
-                  <p className="text-slate-400 font-medium">Bulk upload cards or analyze your bordro.</p>
+                  <h3 className="text-4xl font-black tracking-tighter mb-2">Veri Ekle</h3>
+                  <p className="text-slate-400 font-medium">Ekstrelerini yükle veya bordronu analiz et.</p>
                 </div>
                 <div className="space-y-8">
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Credit Card Statements</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Kredi Kartı Ekstreleri (PDF)</p>
                     <FileUpload onFilesSelect={handleFilesSelect} isLoading={status === AppStatus.ANALYZING} />
                   </div>
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Salary Slip (Bordro)</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Maaş Bordrosu (PDF)</p>
                     <div className="relative overflow-hidden group">
                       <div className="absolute inset-0 bg-emerald-600 opacity-5 group-hover:opacity-10 transition-opacity rounded-3xl"></div>
                       <FileUpload onFilesSelect={handleSalarySelect} isLoading={status === AppStatus.ANALYZING_SALARY} />
-                      <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-black px-2 py-1 rounded uppercase">Salary Mode</div>
+                      <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-600 text-[8px] font-black px-2 py-1 rounded uppercase pointer-events-none">Bordro Modu</div>
                     </div>
                   </div>
                 </div>
@@ -260,14 +300,14 @@ const App: React.FC = () => {
         </main>
 
         <nav className="md:hidden flex bg-white/90 dark:bg-darkCard/90 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800 fixed bottom-0 left-0 right-0 h-16 justify-around items-center px-6 z-50">
-          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center space-y-1 ${activeTab === 'home' ? 'text-indigo-600' : 'text-slate-400'}`}>
+          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'home' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
             <i className="fas fa-th-large"></i><span className="text-[9px] font-black uppercase">Home</span>
           </button>
           <div className="relative -top-6">
-            <button onClick={() => setIsManualModalOpen(true)} className="w-14 h-14 rounded-full bg-indigo-600 shadow-xl shadow-indigo-400 flex items-center justify-center text-white ring-4 ring-white dark:ring-darkBg"><i className="fas fa-plus"></i></button>
+            <button onClick={() => setIsManualModalOpen(true)} className="w-14 h-14 rounded-full bg-indigo-600 shadow-xl shadow-indigo-400 flex items-center justify-center text-white ring-4 ring-white dark:ring-darkBg active:scale-90 transition-transform"><i className="fas fa-plus"></i></button>
           </div>
-          <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center space-y-1 ${activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400'}`}>
-            <i className="fas fa-list-ul"></i><span className="text-[9px] font-black uppercase">History</span>
+          <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center space-y-1 transition-all ${activeTab === 'history' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
+            <i className="fas fa-list-ul"></i><span className="text-[9px] font-black uppercase">Geçmiş</span>
           </button>
         </nav>
       </div>

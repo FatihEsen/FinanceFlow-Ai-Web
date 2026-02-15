@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { 
-  BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, YAxis
+  BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { Transaction } from '../types';
 
@@ -13,28 +13,47 @@ type TimeRange = '7d' | '30d' | 'month' | 'all';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4'];
 
+const parseFlexibleDate = (dateStr: string) => {
+  // ISO formatı mı?
+  let d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+
+  // DD.MM.YYYY veya DD/MM/YYYY formatını dene
+  const parts = dateStr.split(/[./-]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) { // YYYY-MM-DD
+      d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    } else { // DD-MM-YYYY
+      d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    }
+  }
+  return d;
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
   const [range, setRange] = useState<TimeRange>('30d');
 
-  // Eğer 30 günde veri yoksa ama toplamda veri varsa, otomatik "all"a çek
+  // Dashboard boşsa otomatik "all"a çekme mantığı
   useEffect(() => {
     if (transactions.length > 0) {
       const now = new Date();
       const hasRecent = transactions.some(tx => {
-        const diff = Math.abs(now.getTime() - new Date(tx.date).getTime());
+        const txDate = parseFlexibleDate(tx.date);
+        if (isNaN(txDate.getTime())) return false;
+        const diff = Math.abs(now.getTime() - txDate.getTime());
         return diff / (1000 * 60 * 60 * 24) <= 30;
       });
       if (!hasRecent && range === '30d') {
         setRange('all');
       }
     }
-  }, [transactions]);
+  }, [transactions, range]);
 
   const stats = useMemo(() => {
     const now = new Date();
     const filterByRange = (tx: Transaction, period: TimeRange) => {
-      const txDate = new Date(tx.date);
-      if (isNaN(txDate.getTime())) return false; // Hatalı tarihleri ele
+      const txDate = parseFlexibleDate(tx.date);
+      if (isNaN(txDate.getTime())) return period === 'all'; // Geçersiz tarihler sadece "all"da görünür
 
       const diffTime = Math.abs(now.getTime() - txDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -61,10 +80,11 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
 
-    // Bar Chart Data: Tarihe göre sıralı olmalı
     const barMap: Record<string, { label: string, amount: number, timestamp: number }> = {};
     currentTxs.forEach(t => {
-      const dateObj = new Date(t.date);
+      const dateObj = parseFlexibleDate(t.date);
+      if (isNaN(dateObj.getTime())) return;
+
       const label = range === 'all' 
         ? dateObj.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' }) 
         : dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
@@ -81,14 +101,9 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
     const barData = Object.values(barMap)
       .sort((a, b) => a.timestamp - b.timestamp)
-      .slice(-12); // Son 12 veri noktası
+      .slice(-15);
 
-    return { 
-      totalSpent, 
-      totalIncome, 
-      pieData, 
-      barData
-    };
+    return { totalSpent, totalIncome, pieData, barData };
   }, [transactions, range]);
 
   if (transactions.length === 0) {
@@ -119,7 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden">
+        <div className="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden transition-transform hover:scale-[1.01]">
           <div className="relative z-10">
             <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Toplam Gider</p>
             <h4 className="text-3xl font-black tracking-tighter">
@@ -131,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-darkCard rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-darkCard rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden transition-transform hover:scale-[1.01]">
           <div className="relative z-10">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Toplam Gelir</p>
             <h4 className="text-3xl font-black tracking-tighter text-emerald-500">
@@ -175,11 +190,11 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
         <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Kategorilere Göre Dağılım</h4>
         <div className="space-y-4">
-          {stats.pieData.slice(0, 6).map((item, index) => (
-            <div key={item.name} className="flex items-center justify-between">
+          {stats.pieData.slice(0, 8).map((item, index) => (
+            <div key={item.name} className="flex items-center justify-between group">
               <div className="flex items-center space-x-3">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{item.name}</span>
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">{item.name}</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-sm font-black text-slate-900 dark:text-white">

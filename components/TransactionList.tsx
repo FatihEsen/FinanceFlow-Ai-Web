@@ -20,32 +20,32 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
     <div className="bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-darkBg/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h4 className="font-semibold text-gray-800 dark:text-white">Transaction List</h4>
-          <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Detailed history of all movements</p>
+          <h4 className="font-semibold text-gray-800 dark:text-white">İşlem Geçmişi</h4>
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Tüm hareketlerin detaylı listesi</p>
         </div>
         
         <div className="flex bg-gray-100 dark:bg-darkBg p-1 rounded-xl">
-          <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'all' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>All</button>
-          <button onClick={() => setFilter('expense')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'expense' ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Expenses</button>
-          <button onClick={() => setFilter('income')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'income' ? 'bg-white dark:bg-slate-700 text-green-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Income</button>
+          <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'all' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Tümü</button>
+          <button onClick={() => setFilter('expense')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'expense' ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Giderler</button>
+          <button onClick={() => setFilter('income')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'income' ? 'bg-white dark:bg-slate-700 text-green-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Gelirler</button>
         </div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="text-xs font-semibold text-gray-400 uppercase tracking-wider bg-white dark:bg-darkCard">
-              <th className="px-6 py-4">Date</th>
-              <th className="px-6 py-4">Description</th>
-              <th className="px-6 py-4">Category</th>
-              <th className="px-6 py-4 text-right">Amount</th>
+            <tr className="text-xs font-semibold text-slate-400 uppercase tracking-wider bg-white dark:bg-darkCard">
+              <th className="px-6 py-4">Tarih</th>
+              <th className="px-6 py-4">Açıklama</th>
+              <th className="px-6 py-4">Kategori</th>
+              <th className="px-6 py-4 text-right">Miktar</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
             {filteredTransactions.map((tx) => (
               <tr key={tx.id} className="group hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-colors">
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 whitespace-nowrap">
-                  {new Date(tx.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })}
+                  {new Date(tx.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
@@ -53,7 +53,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
                       {tx.description}
                     </div>
                     {tx.source === 'manual' && (
-                      <span className="text-[8px] bg-slate-100 dark:bg-slate-700 text-slate-500 px-1 rounded uppercase font-bold">Manual</span>
+                      <span className="text-[8px] bg-slate-100 dark:bg-slate-700 text-slate-500 px-1 rounded uppercase font-bold">Manuel</span>
                     )}
                   </div>
                 </td>
@@ -62,11 +62,18 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
                     {tx.category}
                   </span>
                 </td>
-                <td className={`px-6 py-4 text-sm font-bold text-right whitespace-nowrap ${tx.type === 'expense' ? 'text-gray-900 dark:text-white' : 'text-green-600'}`}>
-                  {tx.type === 'income' ? '+' : '-'}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(tx.amount)}
+                <td className={`px-6 py-4 text-sm font-bold text-right whitespace-nowrap ${tx.type === 'expense' ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
+                  {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                 </td>
               </tr>
             ))}
+            {filteredTransactions.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-6 py-10 text-center text-sm text-slate-400">
+                  Henüz bir işlem bulunamadı.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
