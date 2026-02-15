@@ -1,0 +1,12 @@
+{
+  "name": "FinanceFlow AI",
+  "short_name": "FinanceFlow",
+  "description": "AI-Powered Budgeting for Android",
+  "theme_color": "#6366f1",
+  "background_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
