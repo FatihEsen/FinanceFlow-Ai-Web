@@ -6,21 +6,16 @@ import { loadAppSettings } from "./storageService";
 const MAIN_MODEL = 'gemini-3-flash-preview';
 
 export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]> => {
-  const settings = loadAppSettings();
-  // Her çağrıda yeni instance oluşturarak API anahtarı senkronizasyonunu garantiye alıyoruz
+  // Instance'ı fonksiyon içinde oluşturuyoruz (API Key taze kalsın)
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `
-    Aşağıdaki PDF kredi kartı ekstresini analiz et. 
-    
-    KRİTİK FİLTRELEME KURALLARI:
-    1. SADECE harcamaları (giderleri) çıkar.
-    2. Kredi kartı borç ödemelerini (EFT, Havale, Ödeme), iadeleri ve "+" bakiye hareketlerini KESİNLİKLE YOKSAY. Bunları gelir olarak kaydetme.
-    3. Analiz sonucundaki her işlem 'type': 'expense' olmalıdır.
-    4. Tarihleri YYYY-MM-DD formatına çevir.
-    5. Kategorileri şu listeden seç: (Market, Restoran, Teknoloji, Ulaşım, Eğlence, Sağlık, Giyim, Fatura, Diğer).
-    
-    Yalnızca JSON array döndür.
+    Analiz Et: Kredi Kartı Ekstresi. 
+    KURAL: Sadece harcamaları (gider) çıkar. 
+    İPTAL ET: Ödeme, EFT, Havale, Artı Bakiye, İade, Nakit Avans Ödemesi. Bunları asla listeleme.
+    Tarih: YYYY-MM-DD.
+    Tip: Daima 'expense'.
+    JSON formatında döndür.
   `;
 
   try {
@@ -48,25 +43,32 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
       },
     });
 
-    const text = response.text || '[]';
-    const transactions: any[] = JSON.parse(text);
+    const text = response.text?.trim() || '[]';
+    let transactions: any[] = [];
+    
+    try {
+      transactions = JSON.parse(text);
+    } catch (parseError) {
+      console.error("JSON Parse Hatası:", text);
+      return [];
+    }
     
     return transactions.map((t, index) => ({
       ...t,
       amount: Math.abs(Number(t.amount)) || 0,
-      type: 'expense', // Kredi kartından gelen her şeyi gider olarak işaretle
-      id: `tx-${Date.now()}-${index}`,
+      type: 'expense',
+      id: `tx-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
       source: 'ai'
     }));
-  } catch (error) {
-    console.error("Analiz Hatası:", error);
+  } catch (error: any) {
+    console.error("AI Analiz Servis Hatası:", error);
     throw error;
   }
 };
 
 export const analyzeSalarySlip = async (base64Pdf: string): Promise<Transaction> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Bu Maaş Bordrosunu analiz et. Net maaş miktarını ve bordro tarihini çıkar. JSON döndür. Tarih YYYY-MM-DD olmalı.`;
+  const prompt = `Analiz Et: Maaş Bordrosu. Net maaşı ve tarihi (YYYY-MM-DD) bul. JSON döndür.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -103,6 +105,10 @@ export const analyzeSalarySlip = async (base64Pdf: string): Promise<Transaction>
   }
 };
 
+/**
+ * Get financial advice based on transactions summary.
+ * Uses responseSchema for structured JSON output as recommended by Google GenAI guidelines.
+ */
 export const getFinancialAdvice = async (transactions: Transaction[]): Promise<AiAdvice> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const summary = transactions.reduce((acc, t) => {
@@ -111,16 +117,30 @@ export const getFinancialAdvice = async (transactions: Transaction[]): Promise<A
     return acc;
   }, { totalExpense: 0, totalIncome: 0 });
 
-  const prompt = `
-    Kullanıcının Toplam Gideri: ₺${summary.totalExpense}, Toplam Geliri: ₺${summary.totalIncome}.
-    Harcamaları yorumla ve JSON döndür: { verdict: "yorum", tips: ["tavsiye1", "tavsiye2"], status: "saving|warning|critical" }
-  `;
+  const prompt = `Bütçe Analizi: Gelir ₺${summary.totalIncome}, Gider ₺${summary.totalExpense}. Bir tavsiye ver ve durumu (saving, warning, critical, neutral) belirle. JSON döndür.`;
 
   try {
     const response = await ai.models.generateContent({
       model: MAIN_MODEL,
-      contents: prompt,
-      config: { responseMimeType: "application/json" }
+      contents: [{ parts: [{ text: prompt }] }],
+      config: { 
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            verdict: { type: Type.STRING },
+            tips: { 
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            status: { 
+              type: Type.STRING,
+              description: "One of: saving, warning, critical, neutral"
+            },
+          },
+          required: ["verdict", "tips", "status"],
+        }
+      }
     });
     return JSON.parse(response.text || '{}') as AiAdvice;
   } catch (error) {
