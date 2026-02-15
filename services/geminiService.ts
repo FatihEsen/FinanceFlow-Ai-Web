@@ -25,8 +25,9 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
     Aşağıdaki PDF kredi kartı ekstresini analiz et. 
     ${settings.customInstructions ? `Özel Talimatlar: ${settings.customInstructions}` : ''}
     1. Tüm alışverişleri, iadeleri ve ödemeleri belirle.
-    2. Tarihleri YYYY-MM-DD formatına çevir.
+    2. Tarihleri YYYY-MM-DD formatına çevir (Hatalı tarih döndürme).
     3. Kategorileri belirle: (Market, Restoran, Teknoloji, Ulaşım, Eğlence, Sağlık, Giyim, Fatura, Diğer).
+    4. Miktarları sadece sayı (number) olarak döndür.
     Yalnızca JSON array döndür.
   `;
 
@@ -58,7 +59,8 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
     const transactions: any[] = JSON.parse(response.text || '[]');
     return transactions.map((t, index) => ({
       ...t,
-      id: `tx-${Date.now()}-${index}`,
+      amount: Number(t.amount) || 0, // Sayısal garanti
+      id: `tx-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
     }));
   } catch (error) {
     console.error("Gemini Analiz Hatası:", error);
@@ -70,7 +72,7 @@ export const analyzeSalarySlip = async (base64Pdf: string): Promise<Transaction>
   const settings = loadAppSettings();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Bu Maaş Bordrosunu analiz et. Net maaş miktarını ve tarihi çıkar. JSON döndür.`;
+  const prompt = `Bu Maaş Bordrosunu analiz et. Net maaş miktarını ve tarihi çıkar. JSON döndür. Tarih YYYY-MM-DD olmalı.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -97,7 +99,7 @@ export const analyzeSalarySlip = async (base64Pdf: string): Promise<Transaction>
       id: `salary-${Date.now()}`,
       date: data.date,
       description: data.description || "Maaş Ödemesi",
-      amount: data.amount,
+      amount: Number(data.amount) || 0,
       category: "Maaş",
       type: "income",
       source: "salary_slip"
@@ -112,16 +114,17 @@ export const getFinancialAdvice = async (transactions: Transaction[]): Promise<A
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const summary = transactions.reduce((acc, t) => {
+    const amt = Number(t.amount) || 0;
     if (t.type === 'expense') {
-      acc.totalExpense += t.amount;
-    } else acc.totalIncome += t.amount;
+      acc.totalExpense += amt;
+    } else acc.totalIncome += amt;
     return acc;
   }, { totalExpense: 0, totalIncome: 0 });
 
   const prompt = `
     ${getPersonalityPrompt(settings.personality)}
-    Giderler: $${summary.totalExpense}, Gelirler: $${summary.totalIncome}.
-    JSON formatında: verdict (yorum), tips (3 tavsiye), status (saving, warning, critical, neutral) döndür.
+    Kullanıcının verileri: Toplam Gider: ₺${summary.totalExpense}, Toplam Gelir: ₺${summary.totalIncome}.
+    Harcamaları analiz et ve JSON formatında: verdict (yorum), tips (3 tavsiye), status (saving, warning, critical, neutral) döndür.
   `;
 
   try {
@@ -143,6 +146,6 @@ export const getFinancialAdvice = async (transactions: Transaction[]): Promise<A
     });
     return JSON.parse(response.text || '{}') as AiAdvice;
   } catch (error) {
-    return { verdict: "Şu an analiz yapamıyorum başkan.", tips: ["Sonra dene."], status: "neutral" };
+    return { verdict: "Şu an analiz yapamıyorum başkan, bağlantını kontrol et.", tips: ["Biraz sonra tekrar dene."], status: "neutral" };
   }
 };
