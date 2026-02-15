@@ -6,76 +6,89 @@ interface TransactionListProps {
   transactions: Transaction[];
 }
 
-type FilterType = 'all' | 'expense' | 'income';
+type FilterType = 'expense' | 'income';
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
-  const [filter, setFilter] = useState<FilterType>('all');
+  const [activeType, setActiveType] = useState<FilterType>('expense');
 
   const filteredTransactions = useMemo(() => {
-    if (filter === 'all') return transactions;
-    return transactions.filter(tx => tx.type === filter);
-  }, [transactions, filter]);
+    return transactions.filter(tx => tx.type === activeType);
+  }, [transactions, activeType]);
+
+  const summary = useMemo(() => {
+    const total = filteredTransactions.reduce((acc, tx) => acc + (Number(tx.amount) || 0), 0);
+    return { total, count: filteredTransactions.length };
+  }, [filteredTransactions]);
 
   return (
-    <div className="bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-darkBg/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Type Switcher */}
+      <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full max-w-sm mx-auto shadow-inner">
+        <button
+          onClick={() => setActiveType('expense')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center space-x-2 ${activeType === 'expense' ? 'bg-white dark:bg-slate-700 text-rose-500 shadow-sm' : 'text-slate-400 hover:text-slate-500'}`}
+        >
+          <i className="fas fa-shopping-bag"></i>
+          <span>Harcamalar</span>
+        </button>
+        <button
+          onClick={() => setActiveType('income')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center space-x-2 ${activeType === 'income' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-slate-400 hover:text-slate-500'}`}
+        >
+          <i className="fas fa-piggy-bank"></i>
+          <span>Gelirler</span>
+        </button>
+      </div>
+
+      {/* Summary Info */}
+      <div className="bg-white dark:bg-darkCard rounded-3xl p-5 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-gray-800 dark:text-white">İşlem Geçmişi</h4>
-          <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Tüm hareketlerin detaylı listesi</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Seçili Toplam</p>
+          <p className={`text-xl font-black ${activeType === 'expense' ? 'text-slate-900 dark:text-white' : 'text-emerald-500'}`}>
+            ₺{summary.total.toLocaleString('tr-TR')}
+          </p>
         </div>
-        
-        <div className="flex bg-gray-100 dark:bg-darkBg p-1 rounded-xl">
-          <button onClick={() => setFilter('all')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'all' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Tümü</button>
-          <button onClick={() => setFilter('expense')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'expense' ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Giderler</button>
-          <button onClick={() => setFilter('income')} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${filter === 'income' ? 'bg-white dark:bg-slate-700 text-green-600 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Gelirler</button>
+        <div className="text-right">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">İşlem Sayısı</p>
+          <p className="text-xl font-black text-slate-400">{summary.count}</p>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="text-xs font-semibold text-slate-400 uppercase tracking-wider bg-white dark:bg-darkCard">
-              <th className="px-6 py-4">Tarih</th>
-              <th className="px-6 py-4">Açıklama</th>
-              <th className="px-6 py-4">Kategori</th>
-              <th className="px-6 py-4 text-right">Miktar</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
-            {filteredTransactions.map((tx) => (
-              <tr key={tx.id} className="group hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 whitespace-nowrap">
-                  {new Date(tx.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
-                </td>
-                <td className="px-6 py-4">
+      {/* List */}
+      <div className="bg-white dark:bg-darkCard rounded-4xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div className="divide-y divide-slate-50 dark:divide-slate-800">
+          {filteredTransactions.map((tx) => (
+            <div key={tx.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+              <div className="flex items-center space-x-4">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${activeType === 'expense' ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-500' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500'}`}>
+                  <i className={`fas ${activeType === 'expense' ? 'fa-shopping-cart' : 'fa-plus'} text-xs`}></i>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[150px] sm:max-w-xs">{tx.description}</p>
                   <div className="flex items-center space-x-2">
-                    <div className="text-sm font-semibold text-gray-800 dark:text-white max-w-xs truncate" title={tx.description}>
-                      {tx.description}
-                    </div>
-                    {tx.source === 'manual' && (
-                      <span className="text-[8px] bg-slate-100 dark:bg-slate-700 text-slate-500 px-1 rounded uppercase font-bold">Manuel</span>
-                    )}
+                    <span className="text-[10px] text-slate-400 font-bold">{new Date(tx.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700"></span>
+                    <span className="text-[10px] text-indigo-500 font-black uppercase tracking-tighter">{tx.category}</span>
                   </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${tx.type === 'expense' ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 border border-rose-100 dark:border-rose-900/30' : 'bg-green-50 dark:bg-green-900/20 text-green-600 border border-green-100 dark:border-green-900/30'}`}>
-                    {tx.category}
-                  </span>
-                </td>
-                <td className={`px-6 py-4 text-sm font-bold text-right whitespace-nowrap ${tx.type === 'expense' ? 'text-slate-900 dark:text-white' : 'text-green-600'}`}>
-                  {tx.type === 'income' ? '+' : '-'}₺{Number(tx.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                </td>
-              </tr>
-            ))}
-            {filteredTransactions.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-6 py-10 text-center text-sm text-slate-400">
-                  Henüz bir işlem bulunamadı.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className={`text-sm font-black ${activeType === 'expense' ? 'text-slate-900 dark:text-white' : 'text-emerald-500'}`}>
+                  ₺{Number(tx.amount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                </p>
+                {tx.source === 'manual' && (
+                  <span className="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 rounded font-bold uppercase">Manuel</span>
+                )}
+              </div>
+            </div>
+          ))}
+          {filteredTransactions.length === 0 && (
+            <div className="py-20 text-center">
+              <i className="fas fa-folder-open text-3xl text-slate-200 mb-3"></i>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Kayıt Bulunamadı</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

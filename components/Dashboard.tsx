@@ -14,16 +14,13 @@ type TimeRange = '7d' | '30d' | 'month' | 'all';
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4'];
 
 const parseFlexibleDate = (dateStr: string) => {
-  // ISO formatı mı?
   let d = new Date(dateStr);
   if (!isNaN(d.getTime())) return d;
-
-  // DD.MM.YYYY veya DD/MM/YYYY formatını dene
   const parts = dateStr.split(/[./-]/);
   if (parts.length === 3) {
-    if (parts[0].length === 4) { // YYYY-MM-DD
+    if (parts[0].length === 4) { 
       d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    } else { // DD-MM-YYYY
+    } else { 
       d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
     }
   }
@@ -33,7 +30,6 @@ const parseFlexibleDate = (dateStr: string) => {
 const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
   const [range, setRange] = useState<TimeRange>('30d');
 
-  // Dashboard boşsa otomatik "all"a çekme mantığı
   useEffect(() => {
     if (transactions.length > 0) {
       const now = new Date();
@@ -53,11 +49,9 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     const now = new Date();
     const filterByRange = (tx: Transaction, period: TimeRange) => {
       const txDate = parseFlexibleDate(tx.date);
-      if (isNaN(txDate.getTime())) return period === 'all'; // Geçersiz tarihler sadece "all"da görünür
-
+      if (isNaN(txDate.getTime())) return period === 'all';
       const diffTime = Math.abs(now.getTime() - txDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
       if (period === '7d') return diffDays <= 7;
       if (period === '30d') return diffDays <= 30;
       if (period === 'month') return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
@@ -65,9 +59,9 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     };
 
     const currentTxs = transactions.filter(tx => filterByRange(tx, range));
-    
     const totalSpent = currentTxs.reduce((sum, t) => t.type === 'expense' ? sum + (Number(t.amount) || 0) : sum, 0);
     const totalIncome = currentTxs.reduce((sum, t) => t.type === 'income' ? sum + (Number(t.amount) || 0) : sum, 0);
+    const netBalance = totalIncome - totalSpent;
 
     const categoryMap: Record<string, number> = {};
     currentTxs.forEach(t => {
@@ -84,13 +78,10 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     currentTxs.forEach(t => {
       const dateObj = parseFlexibleDate(t.date);
       if (isNaN(dateObj.getTime())) return;
-
       const label = range === 'all' 
         ? dateObj.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' }) 
         : dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
-      
       const dayKey = dateObj.toISOString().split('T')[0];
-      
       if (!barMap[dayKey]) {
         barMap[dayKey] = { label, amount: 0, timestamp: dateObj.getTime() };
       }
@@ -99,19 +90,16 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       }
     });
 
-    const barData = Object.values(barMap)
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .slice(-15);
-
-    return { totalSpent, totalIncome, pieData, barData };
+    const barData = Object.values(barMap).sort((a, b) => a.timestamp - b.timestamp).slice(-15);
+    return { totalSpent, totalIncome, netBalance, pieData, barData };
   }, [transactions, range]);
 
   if (transactions.length === 0) {
     return (
       <div className="bg-white dark:bg-darkCard rounded-4xl p-10 border border-dashed border-slate-200 dark:border-slate-800 text-center">
         <i className="fas fa-chart-pie text-4xl text-slate-200 mb-4"></i>
-        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Henüz Veri Yok</p>
-        <p className="text-xs text-slate-500 mt-2">Dashboard'u canlandırmak için bir ekstre yükle başkan!</p>
+        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Veri Bekleniyor</p>
+        <p className="text-xs text-slate-500 mt-2">Başkan, Dashboard'u doldurmak için ekstrelerini yükle!</p>
       </div>
     );
   }
@@ -119,7 +107,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-black tracking-tighter">Genel Bakış</h3>
+        <h3 className="text-2xl font-black tracking-tighter">Finansal Özet</h3>
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
           {(['7d', '30d', 'month', 'all'] as TimeRange[]).map((r) => (
             <button
@@ -133,49 +121,45 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden transition-transform hover:scale-[1.01]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Toplam Gider */}
+        <div className="bg-rose-500 rounded-3xl p-6 text-white shadow-xl shadow-rose-200 dark:shadow-none relative overflow-hidden transition-transform hover:scale-[1.02]">
           <div className="relative z-10">
-            <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Toplam Gider</p>
-            <h4 className="text-3xl font-black tracking-tighter">
-              ₺{stats.totalSpent.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-            </h4>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Gider</p>
+            <h4 className="text-2xl font-black tracking-tighter">₺{stats.totalSpent.toLocaleString('tr-TR')}</h4>
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-10 text-8xl transform -rotate-12">
-            <i className="fas fa-wallet"></i>
-          </div>
+          <i className="fas fa-arrow-down absolute -right-2 -bottom-2 opacity-10 text-6xl"></i>
         </div>
 
-        <div className="bg-white dark:bg-darkCard rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden transition-transform hover:scale-[1.01]">
+        {/* Toplam Gelir */}
+        <div className="bg-emerald-500 rounded-3xl p-6 text-white shadow-xl shadow-emerald-200 dark:shadow-none relative overflow-hidden transition-transform hover:scale-[1.02]">
           <div className="relative z-10">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Toplam Gelir</p>
-            <h4 className="text-3xl font-black tracking-tighter text-emerald-500">
-              ₺{stats.totalIncome.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-            </h4>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Gelir</p>
+            <h4 className="text-2xl font-black tracking-tighter">₺{stats.totalIncome.toLocaleString('tr-TR')}</h4>
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-5 text-8xl transform rotate-12">
-            <i className="fas fa-hand-holding-usd"></i>
+          <i className="fas fa-arrow-up absolute -right-2 -bottom-2 opacity-10 text-6xl"></i>
+        </div>
+
+        {/* Net Durum */}
+        <div className={`${stats.netBalance >= 0 ? 'bg-indigo-600' : 'bg-slate-900'} rounded-3xl p-6 text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden transition-transform hover:scale-[1.02] md:col-span-1`}>
+          <div className="relative z-10">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Net Durum</p>
+            <h4 className="text-2xl font-black tracking-tighter">₺{stats.netBalance.toLocaleString('tr-TR')}</h4>
+          </div>
+          <div className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 ${stats.netBalance >= 0 ? 'bg-white/10' : 'bg-rose-500/20'}`}>
+            <i className={`fas ${stats.netBalance >= 0 ? 'fa-check' : 'fa-exclamation'} text-white`}></i>
           </div>
         </div>
       </div>
 
       {stats.barData.length > 0 && (
         <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
-          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Harcama Trendi</h4>
+          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Harcama Grafiği</h4>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.barData}>
-                <XAxis 
-                  dataKey="label" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }} 
-                />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }}
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold', fontSize: '12px' }}
-                  formatter={(val: number) => [`₺${val.toLocaleString('tr-TR')}`, 'Miktar']}
-                />
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }} />
+                <Tooltip cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold', fontSize: '12px' }} formatter={(val: number) => [`₺${val.toLocaleString('tr-TR')}`, 'Miktar']} />
                 <Bar dataKey="amount" radius={[6, 6, 6, 6]} barSize={24}>
                   {stats.barData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -188,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       )}
 
       <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
-        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Kategorilere Göre Dağılım</h4>
+        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Kategori Dağılımı</h4>
         <div className="space-y-4">
           {stats.pieData.slice(0, 8).map((item, index) => (
             <div key={item.name} className="flex items-center justify-between group">
@@ -197,18 +181,11 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
                 <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">{item.name}</span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-sm font-black text-slate-900 dark:text-white">
-                  ₺{item.value.toLocaleString('tr-TR')}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold">
-                  %{((item.value / (stats.totalSpent || 1)) * 100).toFixed(1)}
-                </span>
+                <span className="text-sm font-black text-slate-900 dark:text-white">₺{item.value.toLocaleString('tr-TR')}</span>
+                <span className="text-[10px] text-slate-400 font-bold">%{((item.value / (stats.totalSpent || 1)) * 100).toFixed(1)}</span>
               </div>
             </div>
           ))}
-          {stats.pieData.length === 0 && (
-            <p className="text-center py-4 text-xs text-slate-400">Bu aralıkta harcama bulunamadı.</p>
-          )}
         </div>
       </div>
     </div>
