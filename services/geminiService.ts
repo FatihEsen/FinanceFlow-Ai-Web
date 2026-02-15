@@ -14,7 +14,6 @@ const getPersonalityPrompt = (personality: string) => {
   }
 };
 
-// Ücretsiz katman için en verimli model
 const MAIN_MODEL = 'gemini-3-flash-preview';
 
 export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]> => {
@@ -24,11 +23,15 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
   const prompt = `
     Aşağıdaki PDF kredi kartı ekstresini analiz et. 
     ${settings.customInstructions ? `Özel Talimatlar: ${settings.customInstructions}` : ''}
-    1. Tüm alışverişleri, iadeleri ve ödemeleri belirle.
-    2. Tarihleri KESİNLİKLE YYYY-MM-DD formatına çevir.
-    3. Kategorileri belirle: (Market, Restoran, Teknoloji, Ulaşım, Eğlence, Sağlık, Giyim, Fatura, Diğer).
-    4. Type alanı SADECE 'expense' veya 'income' değerlerini alabilir. Kredi kartı ödemeleri ve iadeler 'income', harcamalar 'expense'dir.
-    5. Miktarları (amount) sadece pozitif sayılar olarak döndür.
+    
+    KRİTİK TALİMATLAR:
+    1. SADECE harcamaları (giderleri) belirle.
+    2. Kredi kartı borç ödemelerini, hesaba yapılan transferleri ve iadeleri (artı bakiyeleri) KESİNLİKLE yoksay. 
+    3. Analiz ettiğin her şey 'type': 'expense' (gider) olmalıdır.
+    4. Tarihleri KESİNLİKLE YYYY-MM-DD formatına çevir.
+    5. Kategorileri belirle: (Market, Restoran, Teknoloji, Ulaşım, Eğlence, Sağlık, Giyim, Fatura, Diğer).
+    6. Miktarları sadece pozitif sayılar olarak döndür.
+    
     Yalnızca JSON array döndür.
   `;
 
@@ -49,7 +52,7 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
               description: { type: Type.STRING },
               amount: { type: Type.NUMBER },
               category: { type: Type.STRING },
-              type: { type: Type.STRING, description: "Sadece 'expense' veya 'income'" },
+              type: { type: Type.STRING, description: "Sadece 'expense' döndür" },
             },
             required: ["date", "description", "amount", "category", "type"],
           },
@@ -59,12 +62,16 @@ export const analyzeStatement = async (base64Pdf: string): Promise<Transaction[]
 
     const text = response.text || '[]';
     const transactions: any[] = JSON.parse(text);
-    return transactions.map((t, index) => ({
-      ...t,
-      amount: Math.abs(Number(t.amount)) || 0,
-      type: t.type === 'income' ? 'income' : 'expense',
-      id: `tx-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
-    }));
+    
+    // Güvenlik katmanı: Her ihtimale karşı artı bakiyeleri ve gelirleri kod tarafında da eliyoruz
+    return transactions
+      .filter(t => t.type === 'expense' || Number(t.amount) > 0)
+      .map((t, index) => ({
+        ...t,
+        amount: Math.abs(Number(t.amount)) || 0,
+        type: 'expense', // Kredi kartından gelen her şey giderdir
+        id: `tx-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
+      }));
   } catch (error) {
     console.error("Gemini Analiz Hatası:", error);
     throw error;
