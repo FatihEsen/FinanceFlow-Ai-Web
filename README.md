@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# FinanceFlow AI 🚀
 
-# Run and deploy your AI Studio app
+AI-Powered Budget Management & Statement Analyzer.
 
-This contains everything you need to run your app locally.
+## Features
+- **AI Statement Analysis**: Upload PDF credit card statements and let Gemini-3-Flash categorize your spending automatically.
+- **Salary Slip (Bordro) Parsing**: Specialized extraction of income data from official salary slips.
+- **Custom AI Personalities**: Switch between "Bro", "Accountant", and "Minimalist" coaching styles.
+- **Local-First Architecture**: Your transactions are stored securely in your browser's local storage.
+- **Progressive Web App (PWA)**: Installable on Android and iOS with offline support.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1vvXPSwjEkFuCUFAjQJkzDFLtBbxen5_F
+## Tech Stack
+- **Frontend**: React 19, Tailwind CSS, Jetpack Compose-inspired UI.
+- **AI**: Google Gemini API (@google/genai).
+- **Charts**: Recharts for financial visualization.
+- **Storage**: Browser LocalStorage with indexed DB fallback via Service Workers.
 
-## Run Locally
+## Setup
+1. Ensure `process.env.API_KEY` is set with your Google Gemini API Key.
+2. Deploy to Vercel or Netlify.
+3. Open on your mobile device and "Add to Home Screen" for the full native experience.
 
-**Prerequisites:**  Node.js
+## Development
+```bash
+# Conceptually (as this is an es6 module app)
+# Just serve the root directory.
+```
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+*Created by the Native Architect Prompt.*

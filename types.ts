@@ -6,7 +6,7 @@ export interface Transaction {
   amount: number;
   category: string;
   type: 'expense' | 'income';
-  source: 'ai' | 'manual';
+  source: 'ai' | 'manual' | 'salary_slip';
 }
 
 export interface AiAdvice {
@@ -15,9 +15,15 @@ export interface AiAdvice {
   status: 'saving' | 'warning' | 'critical' | 'neutral';
 }
 
+export interface AppSettings {
+  personality: 'bro' | 'accountant' | 'minimalist';
+  customInstructions: string;
+}
+
 export enum AppStatus {
   IDLE = 'IDLE',
   ANALYZING = 'ANALYZING',
+  ANALYZING_SALARY = 'ANALYZING_SALARY',
   READY = 'READY',
   ERROR = 'ERROR',
   THINKING = 'THINKING'
