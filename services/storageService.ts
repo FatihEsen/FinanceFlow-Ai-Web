@@ -34,8 +34,34 @@ export const saveAppSettings = (settings: AppSettings) => {
 
 export const loadAppSettings = (): AppSettings => {
   const data = localStorage.getItem(SETTINGS_KEY);
-  return data ? JSON.parse(data) : {
+  if (data) {
+    const parsed = JSON.parse(data);
+
+    // Migration from old single apiKey format
+    if (parsed.apiKey !== undefined && !parsed.apiKeys) {
+      parsed.apiKeys = {
+        google: parsed.provider === 'google' ? parsed.apiKey : '',
+        openai: parsed.provider === 'openai' ? parsed.apiKey : '',
+        groq: parsed.provider === 'groq' ? parsed.apiKey : '',
+        openrouter: parsed.provider === 'openrouter' ? parsed.apiKey : ''
+      };
+      delete parsed.apiKey;
+      saveAppSettings(parsed); // Save the migrated format
+    } else if (!parsed.apiKeys) {
+      parsed.apiKeys = { google: '', openai: '', groq: '', openrouter: '' };
+    } else if (parsed.apiKeys.openrouter === undefined) {
+      parsed.apiKeys.openrouter = '';
+    }
+
+    return parsed;
+  }
+
+  return {
     personality: 'bro',
-    customInstructions: ''
+    customInstructions: '',
+    apiKeys: { google: '', openai: '', groq: '', openrouter: '' },
+    provider: 'google',
+    model: 'gemini-1.5-flash',
+    baseUrl: ''
   };
 };

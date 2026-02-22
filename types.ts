@@ -15,9 +15,20 @@ export interface AiAdvice {
   status: 'saving' | 'warning' | 'critical' | 'neutral';
 }
 
+export type AiProvider = 'google' | 'openai' | 'groq' | 'openrouter';
+
 export interface AppSettings {
   personality: 'bro' | 'accountant' | 'minimalist';
   customInstructions: string;
+  apiKeys: {
+    google: string;
+    openai: string;
+    groq: string;
+    openrouter: string;
+  };
+  provider: AiProvider;
+  model: string;
+  baseUrl: string;
 }
 
 export enum AppStatus {

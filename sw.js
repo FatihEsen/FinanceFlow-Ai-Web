@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'financeflow-v2';
+const CACHE_NAME = 'financeflow-v10';
 
 const CORE_ASSETS = [
   '/',

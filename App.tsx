@@ -23,7 +23,7 @@ const App: React.FC = () => {
   const [lastError, setLastError] = useState<string | null>(null);
 
   // Fix: Defining isAnalyzing helper to prevent aggressive TypeScript narrowing from breaking siblings in JSX
-  const isAnalyzing = status === AppStatus.ANALYZING || status === AppStatus.ANALYZING_SALARY;
+  const isAnalyzing = (status as AppStatus) === AppStatus.ANALYZING || (status as AppStatus) === AppStatus.ANALYZING_SALARY;
 
   useEffect(() => {
     const savedTxs = loadTransactions();
@@ -34,15 +34,6 @@ const App: React.FC = () => {
     else document.documentElement.classList.remove('dark');
   }, [theme]);
 
-  const checkAndOpenKeySelector = async () => {
-    // @ts-ignore
-    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
-      // @ts-ignore
-      await window.aistudio.openSelectKey();
-      return true;
-    }
-    return false;
-  };
 
   const handleFilesSelect = async (base64Array: string[]) => {
     setLastError(null);
@@ -55,27 +46,30 @@ const App: React.FC = () => {
             return await analyzeStatement(base64);
           } catch (e: any) {
             console.error("PDF Analiz Hatası:", e);
-            // Eğer API hatası "API key" ile ilgiliyse selector'ı aç
-            if (e.message?.includes('API_KEY') || e.message?.includes('not found')) {
-              await checkAndOpenKeySelector();
+            const message = e.message || "Analiz sırasında bir hata oluştu.";
+            setLastError(message);
+            // Sadece anahtar hiç yoksa modalı aç
+            if (message.includes('girin') || message.includes('bulunamadı')) {
+              setIsSettingsOpen(true);
             }
-            return [];
+            return null;
           }
         })
       );
-      
-      const newTransactions = results.flat();
+
+      const validResults = results.filter(r => r !== null) as Transaction[][];
+      const newTransactions = validResults.flat();
+
       if (newTransactions.length > 0) {
         setTransactions(prev => {
           const combined = [...newTransactions, ...prev];
-          // Duplicate kontrolü
           const unique = Array.from(new Map(combined.map(item => [`${item.date}-${item.description}-${item.amount}`, item])).values());
           return unique.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         });
         setStatus(AppStatus.READY);
-        setActiveTab('home'); // Başarıyla yüklenince özet sayfasına git
+        setActiveTab('home');
       } else {
-        setLastError("Dosyadan veri çıkarılamadı. Kredi kartı ekstresi olduğundan veya API anahtarının geçerli olduğundan emin ol başkan.");
+        // Hata zaten catch bloğunda setLastError ile ayarlandı
         setStatus(AppStatus.READY);
       }
     } catch (err: any) {
@@ -110,7 +104,7 @@ const App: React.FC = () => {
 
   return (
     <div className={`flex flex-col md:flex-row h-screen w-full transition-colors duration-300 ${theme === 'dark' ? 'dark bg-darkBg text-white' : 'bg-slate-50 text-slate-900'}`}>
-      
+
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-darkCard border-r border-slate-100 dark:border-slate-800 p-6">
         <div className="flex items-center space-x-3 mb-10">
@@ -179,7 +173,7 @@ const App: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2"><Dashboard transactions={transactions} /></div>
                 <div className="space-y-6">
-                  <AiAdvisor advice={aiAdvice} isLoading={isAdviceLoading} onRefresh={() => {}} />
+                  <AiAdvisor advice={aiAdvice} isLoading={isAdviceLoading} onRefresh={() => { }} />
                   <div className="bg-white dark:bg-darkCard p-6 rounded-4xl border border-slate-100 dark:border-slate-800">
                     <button onClick={() => setIsManualModalOpen(true)} className="w-full py-4 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-black uppercase tracking-widest transition-transform active:scale-95">Manuel İşlem Ekle</button>
                   </div>
@@ -198,17 +192,17 @@ const App: React.FC = () => {
                 <div className="space-y-8">
                   <section>
                     <div className="flex items-center space-x-2 mb-4 ml-2">
-                       <i className="fas fa-credit-card text-indigo-600"></i>
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kredi Kartı Ekstresi</p>
+                      <i className="fas fa-credit-card text-indigo-600"></i>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kredi Kartı Ekstresi</p>
                     </div>
-                    <FileUpload onFilesSelect={handleFilesSelect} isLoading={status === AppStatus.ANALYZING} />
+                    <FileUpload onFilesSelect={handleFilesSelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING} />
                   </section>
                   <section>
                     <div className="flex items-center space-x-2 mb-4 ml-2">
-                       <i className="fas fa-file-invoice-dollar text-emerald-500"></i>
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maaş Bordrosu</p>
+                      <i className="fas fa-file-invoice-dollar text-emerald-500"></i>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maaş Bordrosu</p>
                     </div>
-                    <div className="opacity-90"><FileUpload onFilesSelect={handleSalarySelect} isLoading={status === AppStatus.ANALYZING_SALARY} /></div>
+                    <div className="opacity-90"><FileUpload onFilesSelect={handleSalarySelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING_SALARY} /></div>
                   </section>
                 </div>
               </div>
@@ -228,7 +222,7 @@ const App: React.FC = () => {
         </nav>
       </div>
 
-      <ManualEntry isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} onAdd={(tx) => {setTransactions([tx, ...transactions]); setActiveTab('home');}} />
+      <ManualEntry isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} onAdd={(tx) => { setTransactions([tx, ...transactions]); setActiveTab('home'); }} />
       {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} />}
     </div>
   );
