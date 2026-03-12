@@ -16,7 +16,7 @@ const callAi = async (prompt: string, settings: any, isJson: boolean = true): Pr
   if (provider === 'google') {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: model || 'gemini-1.5-flash',
+      model: model || 'gemini-2.0-flash',
       contents: { parts: [{ text: prompt }] }, // Fixed: Object structure
       config: isJson ? { responseMimeType: "application/json" } : undefined
     });
