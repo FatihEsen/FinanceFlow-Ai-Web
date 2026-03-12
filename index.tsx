@@ -8,6 +8,7 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+// Version: 1.0.3 - Refresh Check
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
@@ -15,13 +16,12 @@ root.render(
   </React.StrictMode>
 );
 
-// Register service worker if available
+// Register service worker with immediate update
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then((reg) => {
-      console.log('SW Registered:', reg.scope);
-    }).catch((err) => {
-      console.error('SW Registration failed:', err);
+      console.log('SW Registered');
+      reg.update(); // Force check for update on load
     });
   });
 }
