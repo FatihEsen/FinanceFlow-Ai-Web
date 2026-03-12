@@ -9,10 +9,13 @@ interface SettingsProps {
 
 
 const GOOGLE_MODELS = [
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (En Güncel)' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Hızlı)' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Zeki)' },
-  { id: 'gemini-2.0-flash-lite-preview-02-05', name: 'Gemini 2.0 Lite (Deneysel)' },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Stabil)' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
+  { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Experimental)' },
+  { id: 'gemini-2.0-pro-exp-02-05', name: 'Gemini 2.0 Pro (Experimental)' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview (Deneysel)' },
+  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview (Deneysel)' },
 ];
 
 const GROQ_MODELS = [
