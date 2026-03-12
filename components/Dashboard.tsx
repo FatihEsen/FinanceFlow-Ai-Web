@@ -94,16 +94,6 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     return { totalSpent, totalIncome, netBalance, pieData, barData };
   }, [transactions, range]);
 
-  if (transactions.length === 0) {
-    return (
-      <div className="bg-white dark:bg-darkCard rounded-4xl p-10 border border-dashed border-slate-200 dark:border-slate-800 text-center">
-        <i className="fas fa-chart-pie text-4xl text-slate-200 mb-4"></i>
-        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Veri Bekleniyor</p>
-        <p className="text-xs text-slate-500 mt-2">Başkan, Dashboard'u doldurmak için ekstrelerini yükle!</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -152,42 +142,52 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
         </div>
       </div>
 
-      {stats.barData.length > 0 && (
-        <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
-          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Harcama Grafiği</h4>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.barData}>
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }} />
-                <Tooltip cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold', fontSize: '12px' }} formatter={(val: number) => [`₺${val.toLocaleString('tr-TR')}`, 'Miktar']} />
-                <Bar dataKey="amount" radius={[6, 6, 6, 6]} barSize={24}>
-                  {stats.barData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {transactions.length === 0 ? (
+        <div className="bg-white dark:bg-darkCard rounded-4xl p-10 border border-dashed border-slate-200 dark:border-slate-800 text-center">
+          <i className="fas fa-chart-pie text-4xl text-slate-200 mb-4"></i>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Veri Bekleniyor</p>
+          <p className="text-xs text-slate-500 mt-2">Başkan, Dashboard'u doldurmak için ekstrelerini yükle!</p>
         </div>
-      )}
-
-      <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
-        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Kategori Dağılımı</h4>
-        <div className="space-y-4">
-          {stats.pieData.slice(0, 8).map((item, index) => (
-            <div key={item.name} className="flex items-center justify-between group">
-              <div className="flex items-center space-x-3">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">{item.name}</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-black text-slate-900 dark:text-white">₺{item.value.toLocaleString('tr-TR')}</span>
-                <span className="text-[10px] text-slate-400 font-bold">%{((item.value / (stats.totalSpent || 1)) * 100).toFixed(1)}</span>
+      ) : (
+        <>
+          {stats.barData.length > 0 && (
+            <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Harcama Grafiği</h4>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.barData}>
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }} />
+                    <Tooltip cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold', fontSize: '12px' }} formatter={(val: number) => [`₺${val.toLocaleString('tr-TR')}`, 'Miktar']} />
+                    <Bar dataKey="amount" radius={[6, 6, 6, 6]} barSize={24}>
+                      {stats.barData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          )}
+
+          <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Kategori Dağılımı</h4>
+            <div className="space-y-4">
+              {stats.pieData.slice(0, 8).map((item, index) => (
+                <div key={item.name} className="flex items-center justify-between group">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">{item.name}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-black text-slate-900 dark:text-white">₺{item.value.toLocaleString('tr-TR')}</span>
+                    <span className="text-[10px] text-slate-400 font-bold">%{((item.value / (stats.totalSpent || 1)) * 100).toFixed(1)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

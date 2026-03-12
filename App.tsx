@@ -139,7 +139,10 @@ const App: React.FC = () => {
         {/* Mobile Header */}
         <header className="md:hidden bg-white dark:bg-darkCard px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
           <span className="font-black text-lg tracking-tight">FinanceFlow</span>
-          <button onClick={toggleTheme} className="text-indigo-600"><i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i></button>
+          <div className="flex items-center space-x-4">
+            <button onClick={toggleTheme} className="text-slate-400 dark:text-slate-500"><i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun text-yellow-400'}`}></i></button>
+            <button onClick={() => setIsSettingsOpen(true)} className="text-indigo-600"><i className="fas fa-cog"></i></button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-32">
@@ -215,9 +218,12 @@ const App: React.FC = () => {
           <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center ${activeTab === 'home' ? 'text-indigo-600' : 'text-slate-400'}`}>
             <i className="fas fa-chart-pie text-xl"></i><span className="text-[8px] font-black mt-1 uppercase">Özet</span>
           </button>
-          <button onClick={() => setActiveTab('add')} className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white -mt-10 shadow-xl shadow-indigo-300 border-4 border-white dark:border-darkBg transition-transform active:scale-90"><i className="fas fa-plus"></i></button>
           <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center ${activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400'}`}>
             <i className="fas fa-history text-xl"></i><span className="text-[8px] font-black mt-1 uppercase">Hareketler</span>
+          </button>
+          <button onClick={() => setActiveTab('add')} className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white -mt-10 shadow-xl shadow-indigo-300 border-4 border-white dark:border-darkBg transition-transform active:scale-90"><i className="fas fa-plus"></i></button>
+          <button onClick={() => setIsSettingsOpen(true)} className="flex flex-col items-center text-slate-400">
+            <i className="fas fa-cog text-xl"></i><span className="text-[8px] font-black mt-1 uppercase">Ayarlar</span>
           </button>
         </nav>
       </div>
