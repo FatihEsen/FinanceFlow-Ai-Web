@@ -137,11 +137,7 @@ const App: React.FC = () => {
             <i className="fas fa-plus-circle"></i><span className="font-bold">Veri Yükle</span>
           </button>
         </nav>
-        <div className="mt-auto space-y-2">
-          <button onClick={toggleTheme} className="flex items-center space-x-3 px-4 py-3 rounded-2xl w-full text-slate-400 hover:text-indigo-500">
-            <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun text-yellow-400'}`}></i>
-            <span className="font-bold">{theme === 'light' ? 'Koyu Mod' : 'Aydınlık Mod'}</span>
-          </button>
+        <div className="mt-auto">
           <button onClick={() => setIsSettingsOpen(true)} className="flex items-center space-x-3 px-4 py-3 rounded-2xl w-full text-slate-400 hover:text-indigo-500">
             <i className="fas fa-cog"></i><span className="font-bold">Ayarlar</span>
           </button>
@@ -152,10 +148,7 @@ const App: React.FC = () => {
         {/* Mobile Header */}
         <header className="md:hidden bg-white dark:bg-darkCard px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
           <span className="font-black text-lg tracking-tight">FinanceFlow</span>
-          <div className="flex items-center space-x-4">
-            <button onClick={toggleTheme} className="text-slate-400 dark:text-slate-500"><i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun text-yellow-400'}`}></i></button>
-            <button onClick={() => setIsSettingsOpen(true)} className="text-indigo-600"><i className="fas fa-cog"></i></button>
-          </div>
+          <button onClick={() => setIsSettingsOpen(true)} className="text-indigo-600"><i className="fas fa-cog"></i></button>
         </header>
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-32">
@@ -277,7 +270,14 @@ const App: React.FC = () => {
       </div>
 
       <ManualEntry isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} onAdd={(tx) => { setTransactions([tx, ...transactions]); setActiveTab('home'); }} />
-      {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} />}
+      {isSettingsOpen && (
+        <Settings
+          onClose={() => setIsSettingsOpen(false)}
+          theme={theme}
+          onThemeToggle={toggleTheme}
+          onClearData={() => { setTransactions([]); }}
+        />
+      )}
     </div>
   );
 };
