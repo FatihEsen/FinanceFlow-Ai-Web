@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AiAdvice } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AiAdvisorProps {
   advice: AiAdvice | null;
@@ -9,6 +10,8 @@ interface AiAdvisorProps {
 }
 
 const AiAdvisor: React.FC<AiAdvisorProps> = ({ advice, isLoading, onRefresh }) => {
+  const { t } = useLanguage();
+
   const getStatusStyles = (status: string) => {
     switch (status) {
       case 'critical': return 'from-rose-500 to-orange-600';
@@ -39,14 +42,14 @@ const AiAdvisor: React.FC<AiAdvisorProps> = ({ advice, isLoading, onRefresh }) =
             </div>
             <div>
               <h3 className="font-bold text-sm dark:text-white">AI Finance Coach</h3>
-              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Bütçe Analizi</p>
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{t('ai_subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onRefresh}
             disabled={isLoading}
             className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Analizi yenile"
+            title={t('ai_refresh')}
           >
             <i className={`fas fa-redo-alt text-xs ${isLoading ? 'animate-spin' : ''}`}></i>
           </button>
@@ -78,8 +81,8 @@ const AiAdvisor: React.FC<AiAdvisorProps> = ({ advice, isLoading, onRefresh }) =
               <i className="fas fa-chart-line text-slate-300 dark:text-slate-600 text-xl"></i>
             </div>
             <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Analiz Bekleniyor</p>
-              <p className="text-[11px] text-slate-400 mt-1">Ekstreni yükledikten sonra yenile butonuna bas.</p>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{t('ai_waiting_title')}</p>
+              <p className="text-[11px] text-slate-400 mt-1">{t('ai_waiting_desc')}</p>
             </div>
           </div>
         )}

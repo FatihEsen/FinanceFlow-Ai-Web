@@ -5,6 +5,7 @@ import {
   PieChart, Pie
 } from 'recharts';
 import { Transaction } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -32,15 +33,15 @@ const TrendBadge: React.FC<{ current: number; prev: number; lowerIsBetter?: bool
   if (!prev || prev === 0 || Math.abs(current - prev) < 1) return null;
   const change = ((current - prev) / Math.abs(prev)) * 100;
   const isUp = change > 0;
-  const isGood = lowerIsBetter ? !isUp : isUp;
   return (
-    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-lg bg-white/20 text-white`}>
+    <span className="text-[10px] font-black px-1.5 py-0.5 rounded-lg bg-white/20 text-white">
       {isUp ? '↑' : '↓'} {Math.abs(change).toFixed(0)}%
     </span>
   );
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
+  const { t, lang } = useLanguage();
   const [range, setRange] = useState<TimeRange>('30d');
 
   useEffect(() => {
@@ -53,6 +54,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       if (!hasRecent && range === '30d') setRange('all');
     }
   }, [transactions]);
+
+  const locale = t('locale');
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -94,8 +97,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       const d = parseFlexibleDate(t.date);
       if (isNaN(d.getTime())) return;
       const label = range === 'all'
-        ? d.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' })
-        : d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+        ? d.toLocaleDateString(locale, { month: 'short', year: '2-digit' })
+        : d.toLocaleDateString(locale, { day: '2-digit', month: 'short' });
       const key = range === 'all' ? `${d.getFullYear()}-${d.getMonth()}` : d.toISOString().split('T')[0];
       if (!barMap[key]) barMap[key] = { label, expense: 0, income: 0, ts: d.getTime() };
       if (t.type === 'expense') barMap[key].expense += Number(t.amount) || 0;
@@ -105,14 +108,14 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     const barData = Object.values(barMap).sort((a, b) => a.ts - b.ts).slice(-15);
 
     return { ...curr, prev, netBalance: curr.totalIncome - curr.totalSpent, prevNet: prev.totalIncome - prev.totalSpent, pieData, barData };
-  }, [transactions, range]);
+  }, [transactions, range, locale]);
 
   if (transactions.length === 0) {
     return (
       <div className="bg-white dark:bg-darkCard rounded-4xl p-10 border border-dashed border-slate-200 dark:border-slate-800 text-center">
         <i className="fas fa-chart-pie text-4xl text-slate-200 mb-4"></i>
-        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Veri Bekleniyor</p>
-        <p className="text-xs text-slate-500 mt-2">Ekstreni yükledikten sonra dashboard burada dolacak.</p>
+        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{t('dash_waiting_title')}</p>
+        <p className="text-xs text-slate-500 mt-2">{t('dash_waiting_desc')}</p>
       </div>
     );
   }
@@ -121,12 +124,12 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     <div className="space-y-5">
       {/* Header + Range */}
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-black tracking-tighter">Finansal Özet</h3>
+        <h3 className="text-2xl font-black tracking-tighter">{t('dash_summary_title')}</h3>
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
           {(['7d', '30d', 'month', 'all'] as TimeRange[]).map(r => (
             <button key={r} onClick={() => setRange(r)}
               className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${range === r ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-              {r === 'month' ? 'Bu Ay' : r === 'all' ? 'Tümü' : r}
+              {r === 'month' ? t('dash_this_month') : r === 'all' ? t('dash_all') : r}
             </button>
           ))}
         </div>
@@ -137,11 +140,11 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
         <div className="bg-rose-500 rounded-3xl p-6 text-white shadow-xl shadow-rose-200 dark:shadow-none relative overflow-hidden hover:scale-[1.02] transition-transform">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Gider</p>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">{t('dash_expense')}</p>
               <TrendBadge current={stats.totalSpent} prev={stats.prev.totalSpent} lowerIsBetter />
             </div>
             <h4 className="text-2xl font-black tracking-tighter">{fmt(stats.totalSpent)}</h4>
-            {stats.prev.totalSpent > 0 && <p className="text-[10px] opacity-50 mt-1">Önceki: {fmt(stats.prev.totalSpent)}</p>}
+            {stats.prev.totalSpent > 0 && <p className="text-[10px] opacity-50 mt-1">{t('dash_prev')} {fmt(stats.prev.totalSpent)}</p>}
           </div>
           <i className="fas fa-arrow-down absolute -right-2 -bottom-2 opacity-10 text-6xl"></i>
         </div>
@@ -149,11 +152,11 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
         <div className="bg-emerald-500 rounded-3xl p-6 text-white shadow-xl shadow-emerald-200 dark:shadow-none relative overflow-hidden hover:scale-[1.02] transition-transform">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Gelir</p>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">{t('dash_income')}</p>
               <TrendBadge current={stats.totalIncome} prev={stats.prev.totalIncome} />
             </div>
             <h4 className="text-2xl font-black tracking-tighter">{fmt(stats.totalIncome)}</h4>
-            {stats.prev.totalIncome > 0 && <p className="text-[10px] opacity-50 mt-1">Önceki: {fmt(stats.prev.totalIncome)}</p>}
+            {stats.prev.totalIncome > 0 && <p className="text-[10px] opacity-50 mt-1">{t('dash_prev')} {fmt(stats.prev.totalIncome)}</p>}
           </div>
           <i className="fas fa-arrow-up absolute -right-2 -bottom-2 opacity-10 text-6xl"></i>
         </div>
@@ -161,11 +164,11 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
         <div className={`${stats.netBalance >= 0 ? 'bg-indigo-600' : 'bg-slate-900'} rounded-3xl p-6 text-white shadow-xl shadow-indigo-200 dark:shadow-none relative overflow-hidden hover:scale-[1.02] transition-transform`}>
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Net Durum</p>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">{t('dash_net')}</p>
               <TrendBadge current={stats.netBalance} prev={stats.prevNet} />
             </div>
             <h4 className="text-2xl font-black tracking-tighter">{fmt(stats.netBalance)}</h4>
-            {stats.prevNet !== 0 && <p className="text-[10px] opacity-50 mt-1">Önceki: {fmt(stats.prevNet)}</p>}
+            {stats.prevNet !== 0 && <p className="text-[10px] opacity-50 mt-1">{t('dash_prev')} {fmt(stats.prevNet)}</p>}
           </div>
           <div className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center border-2 border-white/20 ${stats.netBalance >= 0 ? 'bg-white/10' : 'bg-rose-500/20'}`}>
             <i className={`fas ${stats.netBalance >= 0 ? 'fa-check' : 'fa-exclamation'} text-white`}></i>
@@ -177,15 +180,15 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       {stats.barData.length > 0 && (
         <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center justify-between mb-5">
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Gelir / Gider Grafiği</h4>
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">{t('dash_chart_title')}</h4>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase">Gider</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase">{t('dash_expense')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase">Gelir</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase">{t('dash_income')}</span>
               </div>
             </div>
           </div>
@@ -196,7 +199,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
                 <Tooltip
                   cursor={{ fill: 'rgba(99,102,241,0.05)' }}
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.15)', fontWeight: 'bold', fontSize: '12px' }}
-                  formatter={(val: number, name: string) => [fmt(val), name === 'expense' ? 'Gider' : 'Gelir']}
+                  formatter={(val: number, name: string) => [fmt(val), name === 'expense' ? t('dash_expense') : t('dash_income')]}
                 />
                 <Bar dataKey="expense" fill="#fb7185" radius={[5, 5, 5, 5]} barSize={12} />
                 <Bar dataKey="income" fill="#34d399" radius={[5, 5, 5, 5]} barSize={12} />
@@ -209,7 +212,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       {/* Donut + Category Breakdown */}
       {stats.pieData.length > 0 && (
         <div className="bg-white dark:bg-darkCard rounded-4xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-5">Kategori Dağılımı</h4>
+          <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-5">{t('dash_category_title')}</h4>
           <div className="flex flex-col md:flex-row gap-6 items-center">
 
             {/* Donut */}
@@ -228,7 +231,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Toplam</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('dash_total')}</p>
                 <p className="text-sm font-black text-slate-800 dark:text-white">{fmt(stats.totalSpent)}</p>
               </div>
             </div>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { AppSettings, AiProvider, Theme } from '../types';
 import { loadAppSettings, saveAppSettings } from '../services/storageService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SettingsProps {
   onClose: () => void;
@@ -23,7 +24,7 @@ const GOOGLE_MODELS = [
 
 const GROQ_MODELS = [
   { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
-  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Hızlı)' },
+  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B' },
   { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
   { id: 'gemma2-9b-it', name: 'Gemma 2 9B' },
 ];
@@ -35,8 +36,8 @@ const OPENAI_MODELS = [
 
 const OPENROUTER_MODELS = [
   { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet (PDF)' },
-  { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash (Ücretsiz)' },
-  { id: 'mistralai/mistral-nemo', name: 'Mistral Nemo (Ücretsiz)' },
+  { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash (Free)' },
+  { id: 'mistralai/mistral-nemo', name: 'Mistral Nemo (Free)' },
   { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B' },
 ];
 
@@ -55,6 +56,7 @@ const PROVIDER_DEFAULTS: Record<AiProvider, { model: string; baseUrl: string }> 
 };
 
 const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onClearData }) => {
+  const { t, lang, setLang } = useLanguage();
   const [settings, setSettings] = useState<AppSettings>(loadAppSettings());
   const [saved, setSaved] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -88,14 +90,25 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
         {/* Header */}
         <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h2 className="text-xl font-black tracking-tight dark:text-white">Ayarlar</h2>
-            <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-0.5">Konfigürasyon</p>
+            <h2 className="text-xl font-black tracking-tight dark:text-white">{t('s_title')}</h2>
+            <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-0.5">{t('s_subtitle')}</p>
           </div>
           <div className="flex items-center space-x-2">
+            {/* Language Toggle */}
+            <button
+              onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-600 transition-all"
+              title={t('s_lang')}
+            >
+              <span>{lang === 'tr' ? '🇹🇷' : '🇬🇧'}</span>
+              <span>{lang === 'tr' ? 'TR' : 'EN'}</span>
+            </button>
+            {/* Save */}
             <button onClick={handleSave}
               className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 ${saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-white dark:text-slate-900 text-white hover:opacity-90'}`}>
-              {saved ? <><i className="fas fa-check mr-1.5"></i>Kaydedildi</> : <><i className="fas fa-save mr-1.5"></i>Kaydet</>}
+              {saved ? <><i className="fas fa-check mr-1.5"></i>{t('s_saved')}</> : <><i className="fas fa-save mr-1.5"></i>{t('s_save')}</>}
             </button>
+            {/* Close */}
             <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-all flex items-center justify-center">
               <i className="fas fa-times text-sm"></i>
             </button>
@@ -111,8 +124,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
                 <i className={`fas ${theme === 'dark' ? 'fa-moon text-indigo-400' : 'fa-sun text-yellow-400'} text-sm`}></i>
               </div>
               <div>
-                <p className="text-sm font-black dark:text-white">{theme === 'dark' ? 'Koyu Mod' : 'Aydınlık Mod'}</p>
-                <p className="text-[10px] text-slate-400 font-medium">Görünüm tercihi</p>
+                <p className="text-sm font-black dark:text-white">{theme === 'dark' ? t('s_dark') : t('s_light')}</p>
+                <p className="text-[10px] text-slate-400 font-medium">{t('s_theme_hint')}</p>
               </div>
             </div>
             <button
@@ -125,7 +138,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
 
           {/* AI Provider */}
           <div className="space-y-3">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">AI Servis Sağlayıcı</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('s_provider')}</label>
             <div className="grid grid-cols-4 gap-2">
               {(['google', 'openrouter', 'groq', 'openai'] as const).map(prov => (
                 <button key={prov} onClick={() => handleProviderChange(prov)}
@@ -136,10 +149,10 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
             </div>
           </div>
 
-          {/* Model + API Key (2-col on desktop) */}
+          {/* Model + API Key */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Model</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('s_model')}</label>
               <select value={settings.model} onChange={e => setSettings({ ...settings, model: e.target.value })}
                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm dark:text-white outline-none focus:border-indigo-500 transition-colors">
                 {PROVIDER_MODELS[settings.provider].map(m => (
@@ -148,7 +161,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">API Anahtarı</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('s_api_key')}</label>
               <div className="relative">
                 <input type="password" value={settings.apiKeys[settings.provider] || ''}
                   onChange={e => setSettings({ ...settings, apiKeys: { ...settings.apiKeys, [settings.provider]: e.target.value } })}
@@ -161,7 +174,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
 
           {settings.provider !== 'google' && (
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">API Base URL</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('s_base_url')}</label>
               <input type="text" value={settings.baseUrl}
                 onChange={e => setSettings({ ...settings, baseUrl: e.target.value })}
                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm dark:text-white outline-none focus:border-indigo-500 transition-colors"
@@ -171,7 +184,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
 
           {/* AI Personality */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">AI Karakteri</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('s_personality')}</label>
             <div className="grid grid-cols-3 gap-2">
               {(['bro', 'accountant', 'minimalist'] as const).map(p => (
                 <button key={p} onClick={() => setSettings({ ...settings, personality: p })}
@@ -185,22 +198,22 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
 
           {/* Custom Instructions */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Özel Talimatlar</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('s_custom')}</label>
             <textarea value={settings.customInstructions}
               onChange={e => setSettings({ ...settings, customInstructions: e.target.value })}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white min-h-[70px] focus:border-indigo-500 outline-none transition-colors resize-none"
-              placeholder="Örn: Sadece market harcamalarımı sıkı denetle…" />
+              placeholder={t('s_custom_placeholder')} />
           </div>
 
-          <p className="text-[9px] text-slate-400 italic">Ayarlar yalnızca bu tarayıcıda yerel olarak saklanır.</p>
+          <p className="text-[9px] text-slate-400 italic">{t('s_storage_note')}</p>
 
           {/* Danger Zone */}
           <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Tehlikeli Alan</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{t('s_danger')}</p>
             <button onClick={handleClear}
               className={`w-full py-3 rounded-2xl font-black uppercase tracking-widest text-sm transition-all active:scale-95 border-2 ${confirmClear ? 'bg-rose-500 border-rose-500 text-white' : 'border-rose-200 dark:border-rose-900/50 text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20'}`}>
               <i className={`fas ${confirmClear ? 'fa-exclamation-triangle' : 'fa-trash'} mr-2`}></i>
-              {confirmClear ? 'Emin misin? Tekrar bas!' : 'Tüm Verileri Temizle'}
+              {confirmClear ? t('s_clear_confirm') : t('s_clear')}
             </button>
           </div>
         </div>

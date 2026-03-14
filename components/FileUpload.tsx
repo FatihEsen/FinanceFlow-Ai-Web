@@ -1,5 +1,6 @@
 
 import React, { useCallback, useRef } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface FileUploadProps {
   onFilesSelect: (base64Array: string[]) => void;
@@ -10,7 +11,8 @@ interface FileUploadProps {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, isLoading, label = 'Kredi Kartı Ekstresi', color = 'indigo' }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, isLoading, color = 'indigo' }) => {
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFiles = useCallback(async (fileList: FileList | null) => {
@@ -19,13 +21,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, isLoading, label
 
     const largeFiles = files.filter(f => f.size > MAX_FILE_SIZE);
     if (largeFiles.length > 0) {
-      alert(`Bazı dosyalar çok büyük (Max 5MB). Lütfen daha küçük boyutlu PDF'ler yükle başkan.`);
+      alert(t('fu_too_large'));
       return;
     }
 
     const pdfFiles = files.filter(file => file.type === 'application/pdf');
     if (pdfFiles.length === 0) {
-      alert("Lütfen sadece PDF dosyası yükle.");
+      alert(t('fu_pdf_only'));
       return;
     }
 
@@ -35,7 +37,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, isLoading, label
         try { resolve((reader.result as string).split(',')[1]); }
         catch (err) { reject(err); }
       };
-      reader.onerror = () => reject(new Error("Dosya okunurken hata oluştu."));
+      reader.onerror = () => reject(new Error(t('fu_read_error')));
       reader.readAsDataURL(file);
     }));
 
@@ -43,12 +45,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, isLoading, label
       const base64Results = await Promise.all(promises);
       onFilesSelect(base64Results);
     } catch (err) {
-      console.error("Yükleme Hatası:", err);
-      alert("Dosyalar işlenirken bir sorun oluştu. Lütfen tekrar dene.");
+      console.error('Upload error:', err);
+      alert(t('fu_process_error'));
     } finally {
       if (inputRef.current) inputRef.current.value = '';
     }
-  }, [onFilesSelect]);
+  }, [onFilesSelect, t]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     await processFiles(e.target.files);
@@ -88,16 +90,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, isLoading, label
         className={`flex md:hidden items-center justify-between p-5 cursor-pointer ${isLoading ? 'pointer-events-none opacity-60' : ''}`}
       >
         <div className="flex items-center space-x-4">
-          <div className={`w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center flex-shrink-0`}>
+          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center flex-shrink-0">
             <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-file-pdf'} text-xl ${accent.icon}`}></i>
           </div>
           <div>
-            <p className="font-black text-sm text-slate-800 dark:text-white">{isLoading ? 'Analiz ediliyor…' : 'PDF Seç'}</p>
-            <p className="text-[11px] text-slate-400 font-medium mt-0.5">Maksimum 5MB · PDF</p>
+            <p className="font-black text-sm text-slate-800 dark:text-white">{isLoading ? t('fu_analyzing_mobile') : t('fu_select')}</p>
+            <p className="text-[11px] text-slate-400 font-medium mt-0.5">{t('fu_size_hint')}</p>
           </div>
         </div>
         <div className={`px-4 py-2.5 rounded-xl text-white text-xs font-black uppercase tracking-wider shadow-lg ${accent.btn} transition-all active:scale-95`}>
-          <i className="fas fa-upload mr-1.5"></i>Seç
+          <i className="fas fa-upload mr-1.5"></i>{t('fu_select').split(' ')[0]}
         </div>
       </label>
 
@@ -110,14 +112,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesSelect, isLoading, label
           <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-file-medical'} text-4xl ${accent.icon}`}></i>
         </div>
         <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">
-          {isLoading ? 'Analiz Ediliyor…' : 'Dosyaları Buraya Bırak'}
+          {isLoading ? t('fu_analyzing_desktop') : t('fu_drop')}
         </h3>
         <p className="text-sm text-slate-400 font-medium text-center max-w-xs">
-          veya tıkla, dosyaları seç
+          {t('fu_or_click')}
         </p>
         <div className="mt-4 flex space-x-2">
           <span className={`text-[10px] bg-white dark:bg-slate-800 px-2 py-1 rounded border font-bold uppercase tracking-wider ${accent.tag}`}>MAX 5MB</span>
-          <span className={`text-[10px] bg-white dark:bg-slate-800 px-2 py-1 rounded border font-bold uppercase tracking-wider ${accent.tag}`}>PDF ANALİZ</span>
+          <span className={`text-[10px] bg-white dark:bg-slate-800 px-2 py-1 rounded border font-bold uppercase tracking-wider ${accent.tag}`}>PDF</span>
         </div>
       </label>
     </div>
