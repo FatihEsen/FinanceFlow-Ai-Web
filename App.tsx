@@ -10,8 +10,10 @@ import TransactionList from './components/TransactionList';
 import ManualEntry from './components/ManualEntry';
 import AiAdvisor from './components/AiAdvisor';
 import Settings from './components/Settings';
+import { useLanguage } from './contexts/LanguageContext';
 
 const App: React.FC = () => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'add'>('add');
   const [status, setStatus] = useState<AppStatus>(AppStatus.READY);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -44,9 +46,9 @@ const App: React.FC = () => {
             return await analyzeStatement(base64);
           } catch (e: any) {
             console.error("PDF Analiz Hatası:", e);
-            const message = e.message || "Analiz sırasında bir hata oluştu.";
+            const message = e.message || t('fu_process_error');
             setLastError(message);
-            if (message.includes('girin') || message.includes('bulunamadı')) {
+            if (message.includes('API') || message.includes('key')) {
               setIsSettingsOpen(true);
             }
             return null;
@@ -69,7 +71,7 @@ const App: React.FC = () => {
         setStatus(AppStatus.READY);
       }
     } catch (err: any) {
-      setLastError(err.message || "İşlem sırasında beklenmedik bir hata oluştu.");
+      setLastError(err.message || t('fu_process_error'));
       setStatus(AppStatus.ERROR);
     }
   };
@@ -83,7 +85,7 @@ const App: React.FC = () => {
       setStatus(AppStatus.READY);
       setActiveTab('home');
     } catch (e: any) {
-      setLastError("Bordro analiz edilemedi. PDF formatını kontrol et.");
+      setLastError(t('fu_process_error'));
       setStatus(AppStatus.READY);
     }
   };
@@ -128,18 +130,18 @@ const App: React.FC = () => {
         </div>
         <nav className="flex-1 space-y-2">
           <button onClick={() => setActiveTab('home')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full transition-all ${activeTab === 'home' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-indigo-500'}`}>
-            <i className="fas fa-home"></i><span className="font-bold">Dashboard</span>
+            <i className="fas fa-home"></i><span className="font-bold">{t('nav_dashboard')}</span>
           </button>
           <button onClick={() => setActiveTab('history')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full transition-all ${activeTab === 'history' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-indigo-500'}`}>
-            <i className="fas fa-list-ul"></i><span className="font-bold">Hareketler</span>
+            <i className="fas fa-list-ul"></i><span className="font-bold">{t('nav_transactions')}</span>
           </button>
           <button onClick={() => setActiveTab('add')} className={`flex items-center space-x-3 px-4 py-3 rounded-2xl w-full transition-all ${activeTab === 'add' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-indigo-500'}`}>
-            <i className="fas fa-plus-circle"></i><span className="font-bold">Veri Yükle</span>
+            <i className="fas fa-plus-circle"></i><span className="font-bold">{t('nav_upload')}</span>
           </button>
         </nav>
         <div className="mt-auto">
           <button onClick={() => setIsSettingsOpen(true)} className="flex items-center space-x-3 px-4 py-3 rounded-2xl w-full text-slate-400 hover:text-indigo-500">
-            <i className="fas fa-cog"></i><span className="font-bold">Ayarlar</span>
+            <i className="fas fa-cog"></i><span className="font-bold">{t('nav_settings')}</span>
           </button>
         </div>
       </aside>
@@ -170,8 +172,8 @@ const App: React.FC = () => {
                   <i className="fas fa-robot absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600 text-xl"></i>
                 </div>
                 <div className="text-center">
-                  <p className="font-black text-2xl tracking-tighter">AI Analiz Yapıyor</p>
-                  <p className="text-slate-400 text-sm mt-1">Bu işlem biraz zaman alabilir başkan, beklemede kal.</p>
+                  <p className="font-black text-2xl tracking-tighter">{t('analyzing_title')}</p>
+                  <p className="text-slate-400 text-sm mt-1">{t('analyzing_desc')}</p>
                 </div>
               </div>
             )}
@@ -182,15 +184,15 @@ const App: React.FC = () => {
                   <i className="fas fa-chart-bar text-3xl text-indigo-400"></i>
                 </div>
                 <div className="text-center space-y-2">
-                  <p className="text-xl font-black tracking-tighter text-slate-800 dark:text-white">Dashboard Boş</p>
-                  <p className="text-sm text-slate-400 max-w-xs">Ekstreni yükle ya da nasıl göründüğünü görmek için demo veriye bak.</p>
+                  <p className="text-xl font-black tracking-tighter text-slate-800 dark:text-white">{t('home_empty_title')}</p>
+                  <p className="text-sm text-slate-400 max-w-xs">{t('home_empty_desc')}</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button onClick={() => setActiveTab('add')} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg shadow-indigo-200 dark:shadow-none active:scale-95 transition-transform">
-                    <i className="fas fa-upload mr-2"></i>Veri Yükle
+                    <i className="fas fa-upload mr-2"></i>{t('home_upload_btn')}
                   </button>
                   <button onClick={() => setTransactions(getDemoTransactions())} className="px-6 py-3 bg-white dark:bg-darkCard text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-2xl font-black uppercase tracking-widest text-sm active:scale-95 transition-transform">
-                    <i className="fas fa-flask mr-2 text-indigo-400"></i>Demo Veriyi Dene
+                    <i className="fas fa-flask mr-2 text-indigo-400"></i>{t('home_demo_btn')}
                   </button>
                 </div>
               </div>
@@ -202,7 +204,7 @@ const App: React.FC = () => {
                 <div className="space-y-6">
                   <AiAdvisor advice={aiAdvice} isLoading={isAdviceLoading} onRefresh={handleRefreshAdvice} />
                   <div className="bg-white dark:bg-darkCard p-6 rounded-4xl border border-slate-100 dark:border-slate-800">
-                    <button onClick={() => setIsManualModalOpen(true)} className="w-full py-4 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-black uppercase tracking-widest transition-transform active:scale-95">Manuel İşlem Ekle</button>
+                    <button onClick={() => setIsManualModalOpen(true)} className="w-full py-4 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-black uppercase tracking-widest transition-transform active:scale-95">{t('manual_add_btn')}</button>
                   </div>
                 </div>
               </div>
@@ -218,8 +220,8 @@ const App: React.FC = () => {
             {activeTab === 'add' && !isAnalyzing && (
               <div className="max-w-xl mx-auto space-y-6 md:space-y-10 py-4 md:py-10 animate-in fade-in duration-500">
                 <div className="text-center space-y-1.5">
-                  <h3 className="text-3xl md:text-4xl font-black tracking-tighter">Veri Yükle</h3>
-                  <p className="text-slate-400 text-sm font-medium">Finansal dökümanlarını analiz edelim.</p>
+                  <h3 className="text-3xl md:text-4xl font-black tracking-tighter">{t('upload_title')}</h3>
+                  <p className="text-slate-400 text-sm font-medium">{t('upload_subtitle')}</p>
                 </div>
                 <div className="space-y-5">
                   <section>
@@ -227,7 +229,7 @@ const App: React.FC = () => {
                       <div className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                         <i className="fas fa-credit-card text-indigo-600 text-xs"></i>
                       </div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kredi Kartı Ekstresi</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload_cc')}</p>
                     </div>
                     <FileUpload onFilesSelect={handleFilesSelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING} color="indigo" />
                   </section>
@@ -236,7 +238,7 @@ const App: React.FC = () => {
                       <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                         <i className="fas fa-file-invoice-dollar text-emerald-500 text-xs"></i>
                       </div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maaş Bordrosu</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('upload_salary')}</p>
                     </div>
                     <FileUpload onFilesSelect={handleSalarySelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING_SALARY} color="emerald" />
                   </section>
@@ -250,21 +252,21 @@ const App: React.FC = () => {
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-darkCard/95 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 flex items-center justify-around px-2 z-50 pb-safe" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center py-3 px-4 transition-colors ${activeTab === 'home' ? 'text-indigo-600' : 'text-slate-400'}`}>
             <i className="fas fa-chart-pie text-xl"></i>
-            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Özet</span>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">{t('nav_summary')}</span>
           </button>
           <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center py-3 px-4 transition-colors ${activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400'}`}>
             <i className="fas fa-history text-xl"></i>
-            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Hareketler</span>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">{t('nav_transactions')}</span>
           </button>
           <button onClick={() => setActiveTab('add')} className={`flex flex-col items-center py-3 px-4 transition-colors ${activeTab === 'add' ? 'text-indigo-600' : 'text-slate-400'}`}>
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${activeTab === 'add' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 dark:shadow-indigo-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
               <i className="fas fa-plus text-sm"></i>
             </div>
-            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Yükle</span>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">{t('nav_load')}</span>
           </button>
           <button onClick={() => setIsSettingsOpen(true)} className="flex flex-col items-center py-3 px-4 text-slate-400 transition-colors hover:text-indigo-500">
             <i className="fas fa-cog text-xl"></i>
-            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Ayarlar</span>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">{t('nav_settings')}</span>
           </button>
         </nav>
       </div>
@@ -283,3 +285,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
