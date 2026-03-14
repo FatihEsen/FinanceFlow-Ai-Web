@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AppStatus, Transaction, Theme, AiAdvice } from './types';
 import { analyzeStatement, getFinancialAdvice, analyzeSalarySlip } from './services/geminiService';
 import { loadTransactions, saveTransactions, loadTheme, saveTheme } from './services/storageService';
+import { getDemoTransactions } from './services/demoData';
 import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
@@ -182,7 +183,27 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {!isAnalyzing && activeTab === 'home' && (
+            {!isAnalyzing && activeTab === 'home' && transactions.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 space-y-6 animate-in fade-in duration-500">
+                <div className="w-20 h-20 rounded-3xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
+                  <i className="fas fa-chart-bar text-3xl text-indigo-400"></i>
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-xl font-black tracking-tighter text-slate-800 dark:text-white">Dashboard Boş</p>
+                  <p className="text-sm text-slate-400 max-w-xs">Ekstreni yükle ya da nasıl göründüğünü görmek için demo veriye bak.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button onClick={() => setActiveTab('add')} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg shadow-indigo-200 dark:shadow-none active:scale-95 transition-transform">
+                    <i className="fas fa-upload mr-2"></i>Veri Yükle
+                  </button>
+                  <button onClick={() => setTransactions(getDemoTransactions())} className="px-6 py-3 bg-white dark:bg-darkCard text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-2xl font-black uppercase tracking-widest text-sm active:scale-95 transition-transform">
+                    <i className="fas fa-flask mr-2 text-indigo-400"></i>Demo Veriyi Dene
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!isAnalyzing && activeTab === 'home' && transactions.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2"><Dashboard transactions={transactions} /></div>
                 <div className="space-y-6">
