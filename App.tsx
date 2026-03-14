@@ -233,16 +233,24 @@ const App: React.FC = () => {
         </main>
 
         {/* Mobile Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white/90 dark:bg-darkCard/90 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 flex items-center justify-around px-6 z-50">
-          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center ${activeTab === 'home' ? 'text-indigo-600' : 'text-slate-400'}`}>
-            <i className="fas fa-chart-pie text-xl"></i><span className="text-[8px] font-black mt-1 uppercase">Özet</span>
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-darkCard/95 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 flex items-center justify-around px-2 z-50 pb-safe" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center py-3 px-4 transition-colors ${activeTab === 'home' ? 'text-indigo-600' : 'text-slate-400'}`}>
+            <i className="fas fa-chart-pie text-xl"></i>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Özet</span>
           </button>
-          <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center ${activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400'}`}>
-            <i className="fas fa-history text-xl"></i><span className="text-[8px] font-black mt-1 uppercase">Hareketler</span>
+          <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center py-3 px-4 transition-colors ${activeTab === 'history' ? 'text-indigo-600' : 'text-slate-400'}`}>
+            <i className="fas fa-history text-xl"></i>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Hareketler</span>
           </button>
-          <button onClick={() => setActiveTab('add')} className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white -mt-10 shadow-xl shadow-indigo-300 border-4 border-white dark:border-darkBg transition-transform active:scale-90"><i className="fas fa-plus"></i></button>
-          <button onClick={() => setIsSettingsOpen(true)} className="flex flex-col items-center text-slate-400">
-            <i className="fas fa-cog text-xl"></i><span className="text-[8px] font-black mt-1 uppercase">Ayarlar</span>
+          <button onClick={() => setActiveTab('add')} className={`flex flex-col items-center py-3 px-4 transition-colors ${activeTab === 'add' ? 'text-indigo-600' : 'text-slate-400'}`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${activeTab === 'add' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 dark:shadow-indigo-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+              <i className="fas fa-plus text-sm"></i>
+            </div>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Yükle</span>
+          </button>
+          <button onClick={() => setIsSettingsOpen(true)} className="flex flex-col items-center py-3 px-4 text-slate-400 transition-colors hover:text-indigo-500">
+            <i className="fas fa-cog text-xl"></i>
+            <span className="text-[8px] font-black mt-1 uppercase tracking-wider">Ayarlar</span>
           </button>
         </nav>
       </div>
