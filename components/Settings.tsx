@@ -8,6 +8,8 @@ interface SettingsProps {
 }
 
 const GOOGLE_MODELS = [
+  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' },
   { id: 'gemini-2.5-pro-preview-05-06', name: 'Gemini 2.5 Pro Preview' },
   { id: 'gemini-2.5-flash-preview-04-17', name: 'Gemini 2.5 Flash Preview' },
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
