@@ -91,9 +91,15 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
             <h2 className="text-xl font-black tracking-tight dark:text-white">Ayarlar</h2>
             <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-0.5">Konfigürasyon</p>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-all flex items-center justify-center">
-            <i className="fas fa-times text-sm"></i>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button onClick={handleSave}
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 ${saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-white dark:text-slate-900 text-white hover:opacity-90'}`}>
+              {saved ? <><i className="fas fa-check mr-1.5"></i>Kaydedildi</> : <><i className="fas fa-save mr-1.5"></i>Kaydet</>}
+            </button>
+            <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-all flex items-center justify-center">
+              <i className="fas fa-times text-sm"></i>
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-5">
@@ -187,12 +193,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose, theme, onThemeToggle, onCl
           </div>
 
           <p className="text-[9px] text-slate-400 italic">Ayarlar yalnızca bu tarayıcıda yerel olarak saklanır.</p>
-
-          {/* Save */}
-          <button onClick={handleSave}
-            className={`w-full py-3.5 rounded-2xl font-black uppercase tracking-widest transition-all active:scale-95 ${saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-white dark:text-slate-900 text-white hover:opacity-90'}`}>
-            {saved ? <><i className="fas fa-check mr-2"></i>Kaydedildi!</> : 'Değişiklikleri Kaydet'}
-          </button>
 
           {/* Danger Zone */}
           <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
