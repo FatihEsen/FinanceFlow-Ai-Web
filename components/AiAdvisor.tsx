@@ -29,9 +29,8 @@ const AiAdvisor: React.FC<AiAdvisorProps> = ({ advice, isLoading, onRefresh }) =
 
   return (
     <div className="relative group">
-      {/* Background Glow */}
       <div className={`absolute -inset-0.5 bg-gradient-to-r ${advice ? getStatusStyles(advice.status) : 'from-indigo-500 to-violet-500'} rounded-4xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-pulse`}></div>
-      
+
       <div className="relative bg-white dark:bg-darkCard rounded-4xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
@@ -40,13 +39,14 @@ const AiAdvisor: React.FC<AiAdvisorProps> = ({ advice, isLoading, onRefresh }) =
             </div>
             <div>
               <h3 className="font-bold text-sm dark:text-white">AI Finance Coach</h3>
-              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Weekly Insights</p>
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Bütçe Analizi</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onRefresh}
             disabled={isLoading}
-            className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"
+            className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Analizi yenile"
           >
             <i className={`fas fa-redo-alt text-xs ${isLoading ? 'animate-spin' : ''}`}></i>
           </button>
@@ -73,8 +73,14 @@ const AiAdvisor: React.FC<AiAdvisorProps> = ({ advice, isLoading, onRefresh }) =
             </div>
           </div>
         ) : (
-          <div className="text-center py-4">
-            <p className="text-xs text-slate-400">Upload statements for AI analysis, boss!</p>
+          <div className="text-center py-4 space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto">
+              <i className="fas fa-chart-line text-slate-300 dark:text-slate-600 text-xl"></i>
+            </div>
+            <div>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Analiz Bekleniyor</p>
+              <p className="text-[11px] text-slate-400 mt-1">Ekstreni yükledikten sonra yenile butonuna bas.</p>
+            </div>
           </div>
         )}
       </div>

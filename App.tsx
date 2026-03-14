@@ -202,25 +202,29 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'add' && !isAnalyzing && (
-              <div className="max-w-xl mx-auto space-y-10 py-10 animate-in fade-in duration-500">
-                <div className="text-center space-y-2">
-                  <h3 className="text-4xl font-black tracking-tighter">Veri Yükle</h3>
+              <div className="max-w-xl mx-auto space-y-6 md:space-y-10 py-4 md:py-10 animate-in fade-in duration-500">
+                <div className="text-center space-y-1.5">
+                  <h3 className="text-3xl md:text-4xl font-black tracking-tighter">Veri Yükle</h3>
                   <p className="text-slate-400 text-sm font-medium">Finansal dökümanlarını analiz edelim.</p>
                 </div>
-                <div className="space-y-8">
+                <div className="space-y-5">
                   <section>
-                    <div className="flex items-center space-x-2 mb-4 ml-2">
-                      <i className="fas fa-credit-card text-indigo-600"></i>
+                    <div className="flex items-center space-x-2 mb-3 ml-1">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                        <i className="fas fa-credit-card text-indigo-600 text-xs"></i>
+                      </div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kredi Kartı Ekstresi</p>
                     </div>
-                    <FileUpload onFilesSelect={handleFilesSelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING} />
+                    <FileUpload onFilesSelect={handleFilesSelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING} color="indigo" />
                   </section>
                   <section>
-                    <div className="flex items-center space-x-2 mb-4 ml-2">
-                      <i className="fas fa-file-invoice-dollar text-emerald-500"></i>
+                    <div className="flex items-center space-x-2 mb-3 ml-1">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                        <i className="fas fa-file-invoice-dollar text-emerald-500 text-xs"></i>
+                      </div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maaş Bordrosu</p>
                     </div>
-                    <div className="opacity-90"><FileUpload onFilesSelect={handleSalarySelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING_SALARY} /></div>
+                    <FileUpload onFilesSelect={handleSalarySelect} isLoading={(status as AppStatus) === AppStatus.ANALYZING_SALARY} color="emerald" />
                   </section>
                 </div>
               </div>
