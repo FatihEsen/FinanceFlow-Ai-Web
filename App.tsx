@@ -11,7 +11,6 @@ import AiAdvisor from './components/AiAdvisor';
 import Settings from './components/Settings';
 
 const App: React.FC = () => {
-  // Varsayılan olarak 'add' (Veri Yükle) sekmesiyle açılması sağlandı
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'add'>('add');
   const [status, setStatus] = useState<AppStatus>(AppStatus.READY);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -22,7 +21,6 @@ const App: React.FC = () => {
   const [isAdviceLoading, setIsAdviceLoading] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
 
-  // Fix: Defining isAnalyzing helper to prevent aggressive TypeScript narrowing from breaking siblings in JSX
   const isAnalyzing = (status as AppStatus) === AppStatus.ANALYZING || (status as AppStatus) === AppStatus.ANALYZING_SALARY;
 
   useEffect(() => {
@@ -33,7 +31,6 @@ const App: React.FC = () => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [theme]);
-
 
   const handleFilesSelect = async (base64Array: string[]) => {
     setLastError(null);
@@ -48,7 +45,6 @@ const App: React.FC = () => {
             console.error("PDF Analiz Hatası:", e);
             const message = e.message || "Analiz sırasında bir hata oluştu.";
             setLastError(message);
-            // Sadece anahtar hiç yoksa modalı aç
             if (message.includes('girin') || message.includes('bulunamadı')) {
               setIsSettingsOpen(true);
             }
@@ -69,7 +65,6 @@ const App: React.FC = () => {
         setStatus(AppStatus.READY);
         setActiveTab('home');
       } else {
-        // Hata zaten catch bloğunda setLastError ile ayarlandı
         setStatus(AppStatus.READY);
       }
     } catch (err: any) {
@@ -91,6 +86,23 @@ const App: React.FC = () => {
       setStatus(AppStatus.READY);
     }
   };
+
+  const handleDeleteTransaction = useCallback((id: string) => {
+    setTransactions(prev => prev.filter(tx => tx.id !== id));
+  }, []);
+
+  const handleRefreshAdvice = useCallback(async () => {
+    if (transactions.length === 0) return;
+    setIsAdviceLoading(true);
+    try {
+      const advice = await getFinancialAdvice(transactions);
+      setAiAdvice(advice);
+    } catch (e) {
+      console.error("AI tavsiye hatası:", e);
+    } finally {
+      setIsAdviceLoading(false);
+    }
+  }, [transactions]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -157,7 +169,6 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* Combined check for analyzing state using boolean flag */}
             {isAnalyzing && (
               <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
                 <div className="relative">
@@ -171,12 +182,11 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* Check for non-analyzing state using negated flag to fix narrowing error */}
             {!isAnalyzing && activeTab === 'home' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2"><Dashboard transactions={transactions} /></div>
                 <div className="space-y-6">
-                  <AiAdvisor advice={aiAdvice} isLoading={isAdviceLoading} onRefresh={() => { }} />
+                  <AiAdvisor advice={aiAdvice} isLoading={isAdviceLoading} onRefresh={handleRefreshAdvice} />
                   <div className="bg-white dark:bg-darkCard p-6 rounded-4xl border border-slate-100 dark:border-slate-800">
                     <button onClick={() => setIsManualModalOpen(true)} className="w-full py-4 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-black uppercase tracking-widest transition-transform active:scale-95">Manuel İşlem Ekle</button>
                   </div>
@@ -184,7 +194,12 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'history' && <TransactionList transactions={transactions} />}
+            {activeTab === 'history' && (
+              <TransactionList
+                transactions={transactions}
+                onDelete={handleDeleteTransaction}
+              />
+            )}
 
             {activeTab === 'add' && !isAnalyzing && (
               <div className="max-w-xl mx-auto space-y-10 py-10 animate-in fade-in duration-500">

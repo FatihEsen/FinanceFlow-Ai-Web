@@ -7,15 +7,12 @@ interface SettingsProps {
   onClose: () => void;
 }
 
-
 const GOOGLE_MODELS = [
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Stabil)' },
   { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
   { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
   { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Experimental)' },
   { id: 'gemini-2.0-pro-exp-02-05', name: 'Gemini 2.0 Pro (Experimental)' },
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview (Deneysel)' },
-  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview (Deneysel)' },
 ];
 
 const GROQ_MODELS = [
@@ -39,6 +36,7 @@ const OPENROUTER_MODELS = [
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const [settings, setSettings] = useState<AppSettings>(loadAppSettings());
+  const [saved, setSaved] = useState(false);
 
   const handleProviderChange = (provider: AiProvider) => {
     let defaultModel = '';
@@ -63,9 +61,11 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
   const handleSave = () => {
     saveAppSettings(settings);
-    onClose();
-    // Sayfayı yenilemeye gerek yok ama servisler yeni key'den çeksin diye
-    window.location.reload();
+    setSaved(true);
+    setTimeout(() => {
+      setSaved(false);
+      onClose();
+    }, 800);
   };
 
   return (
@@ -85,7 +85,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
         <div className="space-y-8">
 
-          {/* API Key Configuration */}
           <div className="space-y-6 bg-slate-50 dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">AI Servis Sağlayıcı</label>
@@ -157,7 +156,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             <p className="text-[9px] text-slate-400 mt-2 italic">Ayarlarınız yerel olarak tarayıcınızda saklanır.</p>
           </div>
 
-          {/* AI Personality */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">AI Karakteri</label>
             <div className="grid grid-cols-3 gap-2">
@@ -174,7 +172,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Custom Instructions */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Özel Talimatlar</label>
             <textarea
@@ -187,9 +184,9 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
           <button
             onClick={handleSave}
-            className="w-full bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl active:scale-95"
+            className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 ${saved ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-white dark:text-slate-900 text-white hover:scale-[1.02]'}`}
           >
-            Değişiklikleri Kaydet
+            {saved ? <><i className="fas fa-check mr-2"></i>Kaydedildi!</> : 'Değişiklikleri Kaydet'}
           </button>
         </div>
       </div>
